@@ -20,6 +20,9 @@ class Ray:
         self.player = player
         self.map = map
         self.is_height = is_height
+        self.height_rays: list[Ray] = []
+
+        self.debug = False
 
         self.is_facing_down = self.angle > 0 and self.angle < math.pi
         self.is_facing_up = not self.is_facing_down
@@ -134,20 +137,21 @@ class Ray:
 class Raycaster:
     def __init__(self, player, map):
         self.width_rays: list[Ray] = []
-        self.height_rays: list[Ray] = []
         self.player = player
         self.map = map
 
     def cast_hight_rays(self):
+        height_rays = []
         ray_pitch = (self.player.pitch_angle - FOV/2)
         for i in range(NUM_RAYS):
             height_ray = Ray(ray_pitch, self.player, self.player.height_ray_point, self.map, is_height=True)
             height_ray.cast()
-            self.height_rays.append(height_ray)
+            height_rays.append(height_ray)
 
             ray_pitch += FOV / NUM_RAYS
+        return height_rays
 
-    def cast_all_rays(self):
+    def cast_all_rays(self, surface):
         self.width_rays = []
         self.height_rays = []
         ray_angle = (self.player.rotation_angle - FOV/2)
@@ -155,7 +159,10 @@ class Raycaster:
             width_ray = Ray(ray_angle, self.player, self.player.width_ray_point, self.map)
             width_ray.cast()
             self.map.create_height_slice(width_ray)
-            self.cast_hight_rays()
+            if i == NUM_RAYS//2:
+                width_ray.debug = True
+                self.map.draw_height(surface)
+            width_ray.height_rays = self.cast_hight_rays()
             self.width_rays.append(width_ray)
 
             ray_angle += FOV / NUM_RAYS
@@ -163,22 +170,14 @@ class Raycaster:
             
 
     def render(self, screen):
+        for i, width_ray in enumerate(self.width_rays):
+            for j, hight_ray in enumerate(width_ray.height_rays):
+                if width_ray.debug:
+                    hight_ray.render(screen)
 
-        for i, ray in enumerate(self.width_rays):
-            ray.render(screen)
+                line_height = (TILESIZE/width_ray.distance) * 400
 
-            line_height = (TILESIZE/ray.distance) * 400
+                draw_begin = (HEIGHT/2) - (line_height/2)
+                draw_end = line_height
 
-            draw_begin = (HEIGHT/2) - (line_height/2)
-            draw_end = line_height
-
-            pygame.draw.rect(screen, (ray.color, ray.color, ray.color), (i*RESULUTION, draw_begin, RESULUTION, draw_end))
-
-        for i, ray in enumerate(self.height_rays):
-            ray.render(screen)
-            line_height = (TILESIZE/ray.distance) * 400
-
-            draw_begin = (HEIGHT/2) - (line_height/2)
-            draw_end = line_height
-
-            pygame.draw.rect(screen, (ray.color, ray.color, ray.color), (i*RESULUTION + OFFSET, draw_begin, RESULUTION, draw_end))
+                #pygame.draw.rect(screen, (hight_ray.color, hight_ray.color, hight_ray.color), (i*RESULUTION + OFFSET, draw_begin, RESULUTION, draw_end))
