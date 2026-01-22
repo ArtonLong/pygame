@@ -3,7 +3,7 @@ from pygame.locals import *
 import sys
 
 from settings import *
-from map import Map, Object
+from map import Map
 from ray import Raycaster
 from player import Player
 
@@ -12,12 +12,11 @@ class App:
         pygame.init()
 
         self._running = True
-        self.objects = [Object(50, 50, 50, WIDTH/2, HEIGHT/4, HEIGHT/2, (255,255,255)), Object(50, 50, 50, WIDTH/2 - 50, HEIGHT/4 + 50, HEIGHT/2, (255,255,255)), Object(50, 50, 50, WIDTH/2 + 50, HEIGHT/4 + 50, HEIGHT/2, (255,255,255))]
         self.player = Player()
         self.DISPLAY_SURF = pygame.display.set_mode(SIZE)
 
         self.map = Map()
-        self.ray_caster = Raycaster(self.player)
+        self.ray_caster = Raycaster(self.player, self.map)
 
     def on_quit(self):
         pygame.quit()
@@ -40,15 +39,11 @@ class App:
                 if event.type == QUIT:
                     self.on_quit()
             self.DISPLAY_SURF.fill((0,0,0))
-            self.DISPLAY_SURF.fill((50,50,50), ((OFFSET*2, 0),(WIDTH, HEIGHT)))
+            self.DISPLAY_SURF.fill((50,50,50), ((OFFSET, 0),(WIDTH, HEIGHT)))
             pygame.draw.line(self.DISPLAY_SURF, (255,255,255), (WIDTH, 0), (WIDTH, HEIGHT), 1)
 
-            for o in self.objects:
-                o.draw_width(self.DISPLAY_SURF)
-                o.draw_height(self.DISPLAY_SURF)
-
-            # self.map.draw_width(self.DISPLAY_SURF)
-            # self.map.draw_height(self.DISPLAY_SURF)
+            self.map.draw_width(self.DISPLAY_SURF)
+            self.map.draw_height(self.DISPLAY_SURF)
 
             self.player.update(self.DISPLAY_SURF)
             self.ray_caster.cast_all_rays()
