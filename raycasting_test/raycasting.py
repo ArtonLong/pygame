@@ -42,7 +42,7 @@ class App:
             self.DISPLAY_SURF.fill((50,50,50), ((OFFSET, 0),(WIDTH, HEIGHT)))
             pygame.draw.line(self.DISPLAY_SURF, (255,255,255), (WIDTH, 0), (WIDTH, HEIGHT), 1)
 
-            self.map.draw_width(self.DISPLAY_SURF)
+            #self.map.draw_width(self.DISPLAY_SURF)
             self.map.draw_height(self.DISPLAY_SURF)
 
             self.player.update(self.DISPLAY_SURF)

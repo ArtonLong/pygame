@@ -7,7 +7,7 @@ from settings import *
 class Player:
     def __init__(self):
 
-        self.camera = pygame.Vector2(WIDTH/2, HEIGHT-10)
+        self.camera = pygame.Vector2(WIDTH/2, HEIGHT-50)
         self.rotation_angle = 270 * (math.pi / 180)
         self.turn_direction = 0
         self.walk_direction = 0

@@ -14,9 +14,10 @@ def distance_between(x1,y1,x2,y2):
     return math.sqrt((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1))
 
 class Ray:
-    def __init__(self, angle, ray_point: pygame.Vector2, map, is_height = False):
+    def __init__(self, angle, player, ray_point: pygame.Vector2, map, is_height = False):
         self.angle = normalize_angle(angle)
         self.ray_point = ray_point
+        self.player = player
         self.map = map
         self.is_height = is_height
 
@@ -27,6 +28,9 @@ class Ray:
 
         self.wall_hit_x = 0
         self.wall_hit_y = 0
+
+        self.distance = 0
+        self.color = 255
 
     def cast(self):
         found_horizontal_wall = False
@@ -113,9 +117,16 @@ class Ray:
         if horizontal_distance < vertical_distance:
             self.wall_hit_x = horizontal_hit_x
             self.wall_hit_y = horizontal_hit_y
+            self.distance = horizontal_distance
         else:
             self.wall_hit_x = vertical_hit_x
             self.wall_hit_y = vertical_hit_y
+            self.distance = vertical_distance
+
+        self.distance *= math.cos(self.player.rotation_angle - self.angle)
+
+        self.color *= (60 / self.distance)
+        self.color = max(min(255, self.color), 0)
 
     def render(self, surface):
         pygame.draw.line(surface, (255,0,0), self.ray_point, (self.wall_hit_x, self.wall_hit_y))
@@ -130,7 +141,7 @@ class Raycaster:
     def cast_hight_rays(self):
         ray_pitch = (self.player.pitch_angle - FOV/2)
         for i in range(NUM_RAYS):
-            height_ray = Ray(ray_pitch, self.player.height_ray_point, self.map, is_height=True)
+            height_ray = Ray(ray_pitch, self.player, self.player.height_ray_point, self.map, is_height=True)
             height_ray.cast()
             self.height_rays.append(height_ray)
 
@@ -141,16 +152,33 @@ class Raycaster:
         self.height_rays = []
         ray_angle = (self.player.rotation_angle - FOV/2)
         for i in range(NUM_RAYS):
-            width_ray = Ray(ray_angle, self.player.width_ray_point, self.map)
+            width_ray = Ray(ray_angle, self.player, self.player.width_ray_point, self.map)
             width_ray.cast()
+            self.map.create_height_slice(width_ray)
             self.cast_hight_rays()
             self.width_rays.append(width_ray)
 
             ray_angle += FOV / NUM_RAYS
+        self.map.reset_hight_map()
             
 
     def render(self, screen):
-        for r in self.width_rays:
-            r.render(screen)
-        for r in self.height_rays:
-            r.render(screen)
+
+        for i, ray in enumerate(self.width_rays):
+            ray.render(screen)
+
+            line_height = (TILESIZE/ray.distance) * 400
+
+            draw_begin = (HEIGHT/2) - (line_height/2)
+            draw_end = line_height
+
+            pygame.draw.rect(screen, (ray.color, ray.color, ray.color), (i*RESULUTION, draw_begin, RESULUTION, draw_end))
+
+        for i, ray in enumerate(self.height_rays):
+            ray.render(screen)
+            line_height = (TILESIZE/ray.distance) * 400
+
+            draw_begin = (HEIGHT/2) - (line_height/2)
+            draw_end = line_height
+
+            pygame.draw.rect(screen, (ray.color, ray.color, ray.color), (i*RESULUTION + OFFSET, draw_begin, RESULUTION, draw_end))

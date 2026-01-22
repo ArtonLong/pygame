@@ -2,6 +2,7 @@ import pygame
 from pygame.locals import *
 
 from settings import *
+from ray import Ray
 
 class Object:
     def __init__(self, width, height, depth, x, y, z, color: tuple[int,int,int]):
@@ -79,9 +80,9 @@ class Map:
             [1,0,0,0,0,0,0,(1,1,1),0,0,0,0,0,0,1],
             [1,0,0,0,0,0,0,(1,1,1),0,0,0,0,0,0,1],
             [1,0,0,0,0,0,0,(1,1,1),(1,1,1),(1,1,1),0,0,0,0,1],
-            [1,0,0,0,0,0,0,(1,1,1),0,0,0,0,0,0,1],
-            [1,0,0,0,0,0,0,(1,1,1),0,0,0,0,0,0,1],
-            [1,0,0,0,0,0,0,(1,1,1),0,0,0,0,0,0,1],
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
             [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
             [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
             [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
@@ -109,8 +110,33 @@ class Map:
             if tc[2] == 1:
                 pygame.draw.rect(surface, (255,255,255), (self.tile_coords_to_map(tc), (TILESIZE, TILESIZE)))
 
-    #def create_height_slice(self):
-        
+    def create_height_slice(self, ray: Ray):
+        width_tile = self.width_grid[int(ray.wall_hit_y // TILESIZE)][int(ray.wall_hit_x // TILESIZE)]
+        if width_tile == 1:
+            self.height_grid[int(ray.distance // -TILESIZE)] = [1] * COLS
+            return
+        if type(width_tile) == tuple:
+            for y in range(width_tile[2]):
+                self.height_grid[int(ray.distance // -TILESIZE)][width_tile[1] + y] = 1
+
+    def reset_hight_map(self):
+        self.height_grid = [
+            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        ]
 
     def compute_width(self):
         for r in range(len(self.width_grid)):
