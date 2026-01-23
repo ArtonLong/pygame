@@ -31,6 +31,7 @@ class Ray:
 
         self.wall_hit_x = 0
         self.wall_hit_y = 0
+        self.all_hits = []
 
         self.distance = 0
         self.color = 255
@@ -63,12 +64,17 @@ class Ray:
 
         xa = ya / math.tan(self.angle)
 
-        while (next_horizontal_x <= WIDTH and next_horizontal_x >= 0 and next_horizontal_y <= HEIGHT and next_horizontal_y >= 0):
+        while (next_horizontal_x < WIDTH and next_horizontal_x > 0 and next_horizontal_y < HEIGHT and next_horizontal_y > 0):
             if self.map.has_wall_at(next_horizontal_x, next_horizontal_y, self.is_height):
-                found_horizontal_wall = True
-                horizontal_hit_x = next_horizontal_x
-                horizontal_hit_y = next_horizontal_y
-                break
+                if self.is_height:
+                    found_horizontal_wall = True
+                    horizontal_hit_x = next_horizontal_x
+                    horizontal_hit_y = next_horizontal_y
+                    break
+                else:
+                    self.all_hits.append((next_horizontal_x, next_horizontal_y, distance_between(self.ray_point.x, self.ray_point.y, next_horizontal_x, next_horizontal_y)))
+                    next_horizontal_x += xa
+                    next_horizontal_y += ya
             else:
                 next_horizontal_x += xa
                 next_horizontal_y += ya
@@ -94,12 +100,17 @@ class Ray:
 
         ya = xa * math.tan(self.angle)
 
-        while (next_vertical_x <= WIDTH and next_vertical_x >= 0 and next_vertical_y <= HEIGHT and next_vertical_y >= 0):
+        while (next_vertical_x < WIDTH and next_vertical_x > 0 and next_vertical_y < HEIGHT and next_vertical_y > 0):
             if self.map.has_wall_at(next_vertical_x, next_vertical_y, self.is_height):
-                found_vertical_wall = True
-                vertical_hit_x = next_vertical_x
-                vertical_hit_y = next_vertical_y
-                break
+                if self.is_height:
+                    found_vertical_wall = True
+                    vertical_hit_x = next_vertical_x
+                    vertical_hit_y = next_vertical_y
+                    break
+                else:
+                    self.all_hits.append((next_vertical_x, next_vertical_y, distance_between(self.ray_point.x, self.ray_point.y, next_vertical_x, next_vertical_y)))
+                    next_vertical_x += xa
+                    next_vertical_y += ya
             else:
                 next_vertical_x += xa
                 next_vertical_y += ya
@@ -126,13 +137,16 @@ class Ray:
             self.wall_hit_y = vertical_hit_y
             self.distance = vertical_distance
 
-        self.distance *= math.cos(self.player.rotation_angle - self.angle)
+        #self.distance *= math.cos(self.player.rotation_angle - self.angle)
 
         self.color *= (60 / self.distance)
         self.color = max(min(255, self.color), 0)
 
     def render(self, surface):
-        pygame.draw.line(surface, (255,0,0), self.ray_point, (self.wall_hit_x, self.wall_hit_y))
+        color = (255,0,0)
+        if self.debug:
+            color = (0,255,0)
+        pygame.draw.line(surface, color, self.ray_point, (self.wall_hit_x, self.wall_hit_y))
 
 class Raycaster:
     def __init__(self, player, map):
@@ -161,23 +175,37 @@ class Raycaster:
             self.map.create_height_slice(width_ray)
             if i == NUM_RAYS//2:
                 width_ray.debug = True
-                self.map.draw_height(surface)
+                #self.map.draw_height(surface)
             width_ray.height_rays = self.cast_hight_rays()
             self.width_rays.append(width_ray)
+            self.map.reset_height_map()
 
             ray_angle += FOV / NUM_RAYS
-        self.map.reset_hight_map()
             
 
     def render(self, screen):
         for i, width_ray in enumerate(self.width_rays):
-            for j, hight_ray in enumerate(width_ray.height_rays):
+            #width_ray.render(screen)
+
+            # line_height = (TILESIZE/width_ray.all_hits[0][2]) * 400
+
+            # draw_begin = (HEIGHT/2) - (line_height/2)
+            # draw_end = line_height
+
+            #pygame.draw.rect(screen, (width_ray.color, width_ray.color, width_ray.color), (i*RESULUTION + OFFSET, draw_begin, RESULUTION, draw_end))
+            
+            for j, height_ray in enumerate(width_ray.height_rays):
                 if width_ray.debug:
-                    hight_ray.render(screen)
+                    height_ray.render(screen)
 
-                line_height = (TILESIZE/width_ray.distance) * 400
+                #box = height_ray.distance / TILESIZE
+                #angle = math.radians(FOV/NUM_RAYS)
+                #box = math.sqrt(height_ray.distance**2 + height_ray.distance**2 - 2*height_ray.distance*height_ray.distance*math.cos(angle))
 
-                draw_begin = (HEIGHT/2) - (line_height/2)
-                draw_end = line_height
+                # draw_begin = (WIDTH/2) - (line_height/2)
+                # draw_end = line_height
 
-                #pygame.draw.rect(screen, (hight_ray.color, hight_ray.color, hight_ray.color), (i*RESULUTION + OFFSET, draw_begin, RESULUTION, draw_end))
+                ## draw the size of boxes to be the distance to the ray to the side of it 
+
+                #pygame.draw.rect(screen, (height_ray.color, height_ray.color, height_ray.color), (i*RESULUTION + OFFSET, HEIGHT - j*RESULUTION, box, box))
+

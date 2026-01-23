@@ -6,149 +6,72 @@ from ray import Ray
 
 class Object:
     def __init__(self, width, height, depth, x, y, z, color: tuple[int,int,int]):
-        self.size = pygame.Vector3(width, depth, height)
-        self.position = pygame.Vector3(x, y, z)
+        self.width = width
+        self.height = height
+        self.depth = depth
+        self.x = x
+        self.y = y
+        self.z = z
         self.color = color
     
     #width
     def rect_width(self):
-        return pygame.rect.Rect((self.position.x - self.size.x/2, self.position.y - self.size.y/2), (self.size.x, self.size.y))
+        return pygame.rect.Rect((self.x*TILESIZE, self.y*TILESIZE), (self.width*TILESIZE, self.height*TILESIZE))
     
     def draw_width(self, surface):
-        pygame.draw.rect(surface, self.color, self.rect_width())
-
-    def draw_as_circle_width(self, surface):
-        pygame.draw.circle(surface, self.color, (self.position.x, self.position.y), self.position.x/2)
+        pygame.draw.rect(surface, self.color, self.rect_width(), 1)
 
     #height
-    def rect_height(self):
-        return pygame.rect.Rect((self.position.y + OFFSET - self.size.y/2, self.position.z - self.size.z/2), (self.size.y, self.size.z))
+    def rect_height(self, distance_from_player):
+        return pygame.rect.Rect((self.y*TILESIZE, self.z*TILESIZE), (self.y*TILESIZE, self.z*TILESIZE))
     
-    def draw_height(self, surface):
-        pygame.draw.rect(surface, self.color, self.rect_height())
-
-    def draw_as_circle_height(self, surface):
-        pygame.draw.circle(surface, self.color, (self.position.y, self.position.z), self.position.z/2)
+    def draw_height(self, surface, distance_from_player):
+        pygame.draw.rect(surface, self.color, self.rect_height(distance_from_player))
 
 class Map:
     def __init__(self):
-        #(is a block, y coordinate, height of block)
-        #x ----->, y vvvvvvvvv
-        self.width_grid = [
-            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-            [1,0,0,0,0,0,0,(1,1,1),0,0,0,0,0,0,1],
-            [1,0,0,0,0,0,0,(1,1,1),0,0,0,0,0,0,1],
-            [1,0,0,0,0,0,0,(1,1,1),0,0,0,0,0,0,1],
-            [1,0,0,0,0,0,0,(1,1,1),0,0,0,0,0,0,1],
-            [1,0,0,0,0,0,0,(1,1,1),0,0,0,0,0,0,1],
-            [1,0,0,0,0,0,0,(1,1,1),(1,1,1),(1,1,1),0,0,0,0,1],
-            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-            
-        ]
-        #y <--------, z ^^^^^^
-        self.height_grid = [
-            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-        ]
-        self.save_grid = [
-            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-            [1,0,0,0,0,0,0,(1,1,1),0,0,0,0,0,0,1],
-            [1,0,0,0,0,0,0,(1,1,1),0,0,0,0,0,0,1],
-            [1,0,0,0,0,0,0,(1,1,1),0,0,0,0,0,0,1],
-            [1,0,0,0,0,0,0,(1,1,1),0,0,0,0,0,0,1],
-            [1,0,0,0,0,0,0,(1,1,1),0,0,0,0,0,0,1],
-            [1,0,0,0,0,0,0,(1,1,1),(1,1,1),(1,1,1),0,0,0,0,1],
-            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-            
-        ]
-        self.width_tile_coords = []
-        self.height_tile_coords = []
-        self.compute_width()
-    
-    def has_wall_at(self, x, y, is_height):
-        if is_height:
-            is_tile_at = self.height_grid[int(y // TILESIZE)][int(x // TILESIZE)]
-        else:
-            is_tile_at = self.width_grid[int(y // TILESIZE)][int(x // TILESIZE)]
+        self.width_walls: list[Object] = [Object(1,1,1, (WIDTH/2)//TILESIZE,(HEIGHT/2)//TILESIZE,3, (255,255,255))]
+        self.width_grid = [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]
+        self.height_grid = [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]
 
-        if is_tile_at:
-            return True
+        self.generate_empty_cube()
+        self.place_walls()
+
+    def place_walls(self):
+        for w in self.width_walls:
+            self.width_grid[int(w.y)][int(w.x)] = w
+
+    def has_wall_at(self, x, y, is_height):
+        if not is_height:
+            if self.width_grid[int(y//TILESIZE)][int(x//TILESIZE)] != 0:
+                    return True
+        else:
+            if self.height_grid[int(y//TILESIZE)][int(x//TILESIZE)] != 0:
+                return True
         return False
     
-    def tile_coords_to_map(self, tile):
-        return (tile[0]*TILESIZE, tile[1]*TILESIZE)
+    def generate_empty_cube(self):
+        for i in range(COLS):
+            if i == 0:
+                for x in range(ROWS):
+                    self.width_walls.append(Object(1,1,ROWS, x, i, 0, (255,255,255)))
+            if i == COLS - 1:
+                for x in range(ROWS):
+                    self.width_walls.append(Object(1,1,0, x, i, 0, (255,255,255)))
+            else:
+                self.width_walls.append(Object(1,1,ROWS, 0, i, 0, (255,255,255)))
+                self.width_walls.append(Object(1,1,0, ROWS-1, i, 0, (255,255,255)))
 
-    def draw_width(self, surface):
-        for tc in self.width_tile_coords:
-            if tc[2] == 1:
-                coords = self.tile_coords_to_map(tc)
-                pygame.draw.rect(surface, (255,255,255), ((coords[0] + OFFSET, coords[1]), (TILESIZE, TILESIZE)))
-
-    def create_height_slice(self, ray: Ray):
-        width_tile = self.width_grid[int(ray.wall_hit_y // TILESIZE)][int(ray.wall_hit_x // TILESIZE)]
-        if width_tile == 1:
-            self.height_grid[int(ray.distance // -TILESIZE)] = [1] * COLS
-            return
-        if type(width_tile) == tuple:
-            for y in range(width_tile[2]):
-                self.height_grid[int(ray.distance // -TILESIZE)][width_tile[1] + y] = 1
-
-    def reset_hight_map(self):
-        self.height_grid = [
-            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-        ]
-
-    def compute_width(self):
-        for r in range(len(self.width_grid)):
-            for c in range(len(self.width_grid[0])):
-                is_block = 0
-                if type(self.width_grid[r][c]) == tuple or self.width_grid[r][c] == 1:
-                    is_block = 1
-                self.width_tile_coords.append((c,r, is_block))
     
-    def draw_height(self, surface):
-        for r in range(len(self.height_grid)):
-            for c in range(len(self.height_grid[0])):
-                if self.height_grid[r][c] == 1:
-                    pygame.draw.rect(surface, (255,255,255), ((c*TILESIZE, r*TILESIZE), (TILESIZE, TILESIZE)))
+    def create_height_slice(self, ray: Ray):
+        for r in ray.all_hits:
+            if -15 >= int(r[2]//-TILESIZE):
+                return
+            wall = self.width_grid[int(r[0]//TILESIZE)][int(r[1]//TILESIZE)]
+            if wall != 0:
+                for z in range(wall.depth):
+                    self.height_grid[int(r[2]//-TILESIZE)][wall.z + z] = wall
+
+    def reset_height_map(self):
+        self.height_grid = [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]
+
