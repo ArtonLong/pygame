@@ -185,27 +185,33 @@ class Raycaster:
 
     def render(self, screen):
         for i, width_ray in enumerate(self.width_rays):
-            #width_ray.render(screen)
+            width_ray.render(screen)
 
-            # line_height = (TILESIZE/width_ray.all_hits[0][2]) * 400
+            line_height = (TILESIZE/width_ray.all_hits[0][2]) * 400
 
-            # draw_begin = (HEIGHT/2) - (line_height/2)
-            # draw_end = line_height
+            draw_begin = (HEIGHT/2) - (line_height/2)
+            draw_end = line_height
 
             #pygame.draw.rect(screen, (width_ray.color, width_ray.color, width_ray.color), (i*RESULUTION + OFFSET, draw_begin, RESULUTION, draw_end))
             
             for j, height_ray in enumerate(width_ray.height_rays):
                 if width_ray.debug:
                     height_ray.render(screen)
+                    print(width_ray.all_hits[0][2], height_ray.distance)
 
                 #box = height_ray.distance / TILESIZE
-                #angle = math.radians(FOV/NUM_RAYS)
-                #box = math.sqrt(height_ray.distance**2 + height_ray.distance**2 - 2*height_ray.distance*height_ray.distance*math.cos(angle))
 
                 # draw_begin = (WIDTH/2) - (line_height/2)
                 # draw_end = line_height
 
                 ## draw the size of boxes to be the distance to the ray to the side of it 
 
-                #pygame.draw.rect(screen, (height_ray.color, height_ray.color, height_ray.color), (i*RESULUTION + OFFSET, HEIGHT - j*RESULUTION, box, box))
+                    #box = (TILESIZE/height_ray.distance)
+                box = height_ray.distance/TILESIZE
+
+                # angle = math.radians(FOV/NUM_RAYS)
+                # box = math.sqrt(height_ray.distance**2 + height_ray.distance**2 - 2*height_ray.distance*height_ray.distance*math.cos(angle))
+
+                pygame.draw.rect(screen, (height_ray.color, height_ray.color, height_ray.color), (i*RESULUTION + OFFSET, HEIGHT - j*RESULUTION, box, box))
+
 
