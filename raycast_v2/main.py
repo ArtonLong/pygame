@@ -4,64 +4,8 @@ import sys
 import math
 
 from settings import *
-
-class Player:
-    def __init__(self, x, y, z, a, l):
-        self.x, self.y, self.z = x,y,z
-        self.a = a
-        self.l = l
-
-    def move_player(self, cos, sin):
-        keys = pygame.key.get_pressed()
-
-        if keys[pygame.K_LEFT]:
-            self.a -= 2
-        if keys[pygame.K_RIGHT]:
-            self.a += 2
-        self.a = self.rotation_clamp(self.a)
-
-        dx = sin[self.a]*10
-        dy = cos[self.a]*10
-
-        if keys[pygame.K_d]:
-            self.x += dy
-            self.y -= dx
-        if keys[pygame.K_a]:
-            self.x -= dy
-            self.y += dx
-        if keys[pygame.K_w]:
-            self.x += dx
-            self.y += dy
-        if keys[pygame.K_s]:
-            self.x -= dx
-            self.y -= dy
-        if keys[pygame.K_UP]:
-            self.l -= 1
-        if keys[pygame.K_DOWN]:
-            self.l += 1
-        if keys[pygame.K_SPACE]:
-            self.z += 4
-        if keys[pygame.K_LCTRL]:
-            self.z -= 4
-
-    def rotation_clamp(self, a):
-        if a < 0:
-            a += 360
-        elif a > 359:
-            a -= 360
-        return a
-    
-class Wall:
-    def __init__(self, x1, x2, y1, y2, c):
-        self.x1, self.x2 = x1, x2
-        self.y1, self.y2= y1, y2
-        self.c = c
-
-class Sector:
-    def __init__(self, ws, we, z1, z2):
-        self.ws, self.we = ws, we
-        self.z1, self.z2 = z1, z2
-        self.d = 0
+from player import Player
+from sector import Sector, Wall
 
 class App:
     def __init__(self):
@@ -72,8 +16,11 @@ class App:
 
         self.player = Player(70, -110, 20, 0, 0)
 
-        self.sectors = [Sector(0, 4, 0, 40)]
-        self.walls = [Wall(0,0,32,0,1), Wall(32,0,32,32,2), Wall(32,32,0,32,1), Wall(0,32,0,0,2)]
+        self.sectors = [Sector(0, 4, 0, 40), Sector(4, 8, 0, 40)]
+        self.walls = [
+            Wall(0,0,32,0,1), Wall(32,0,32,32,2), Wall(32,32,0,32,1), Wall(0,32,0,0,2),
+            Wall(64,96,0,0,3), Wall(96,96,0,32,4), Wall(96,64,32,32,3), Wall(64,64,32,0,4)
+            ]
 
         self.cos = [0]*360
         self.sin = [0]*360
@@ -91,7 +38,7 @@ class App:
         s = y1 / d
         x1 = x1 + s * (x2 - x1)
         y1 = y1 + s * (y2 - y1)
-        if y1 == 0: y1 = 0
+        if y1 == 0: y1 = 1
         z1 = z1 + s * (z2 - z1)
         return x1, y1, z1
 
@@ -110,8 +57,8 @@ class App:
 
         x = x1
         while x<x2:
-            y1 = dyb*(x-xs*0.5)/dx+b1
-            y2 = dyt*(x-xs*0.5)/dx+t1
+            y1 = dyb*(x-xs+0.5)/dx+b1
+            y2 = dyt*(x-xs+0.5)/dx+t1
             y=y1
             while y<y2:
 
@@ -129,6 +76,13 @@ class App:
         wy = [0,0,0,0]
         wz = [0,0,0,0]
         cos, sin = self.cos[self.player.a], self.sin[self.player.a]
+
+        for s in range(len(self.sectors)-1):
+            for w in range(len(self.sectors)-s-1):
+                if self.sectors[w].d < self.sectors[w+1].d:
+                    st = self.sectors[w]
+                    self.sectors[w] = self.sectors[w+1]
+                    self.sectors[w+1] = st
 
         #offsetting the position of the wall point 1 at 40, 10. by the player
         for s in self.sectors:
@@ -177,8 +131,10 @@ class App:
                 wx[3] = wx[3]*200/wy[3]+W2
                 wy[3] = wz[3]*200/wy[3]+H2
 
-                # self.draw_pixel(wx[0], wy[0], 0)
-                # self.draw_pixel(wx[1], wy[1], 0)
+                # self.draw_pixel(wx[0], wy[0], w.c)
+                # self.draw_pixel(wx[1], wy[1], w.c)
+                # self.draw_pixel(wx[2], wy[2], w.c)
+                # self.draw_pixel(wx[3], wy[3], w.c)
 
                 self.draw_wall(wx[0], wx[1], wy[0], wy[1], wy[2], wy[3], w.c)
             s.d /= (s.we-s.ws)
@@ -188,6 +144,7 @@ class App:
         elif c == 1: color = (255,0,0)
         elif c == 2: color = (0,255,0)
         elif c == 3: color = (0,0,255)
+        elif c == 4: color = (100,0,155)
         else: color = (50,50,50)
 
         pygame.draw.rect(self.DISPLAY_SURF, color, ((x*PIXEL_SCALE, HEIGHT*PIXEL_SCALE - y*PIXEL_SCALE), (PIXEL_SCALE, PIXEL_SCALE)))
@@ -216,7 +173,7 @@ class App:
 
             self.player.move_player(self.cos, self.sin)
             self.draw_3d()
-            self.draw_pixel(W2, H2, 1)
+            #self.draw_pixel(W2, H2, 1)
 
             self.fps_counter(clock)
             pygame.display.update()
