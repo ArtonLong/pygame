@@ -55,32 +55,27 @@ class App:
         if x1 > WIDTH-1: x1 = WIDTH-1
         if x2 > WIDTH-1: x2 = WIDTH-1
 
-        x = math.floor(x1)-1
+        x1 = math.floor(x1)
+        x2 = math.floor(x2)
 
-        while x<x2:
-            x+=1
-            y1 = dyb*(x-xs+0.5)/dx+b1
-            y2 = dyt*(x-xs+0.5)/dx+t1
+        for x in range(x1, x2):
+            y1 = math.floor(dyb*(x-xs+0.5)/dx+b1)
+            y2 = math.floor(dyt*(x-xs+0.5)/dx+t1)
             
             if s.surface == 1: 
-                
                 s.surf[x] = y1
                 continue
             if s.surface == 2: 
                 s.surf[x] = y2
                 continue
             if s.surface == -1:
-                y=s.surf[x]
-                while y<y1:
+                for y in range(s.surf[x], y1):
                     self.draw_pixel(x,y,s.cb)
-                    y+=1
             if s.surface == -2:
-                y=y2
-                while y<s.surf[x]:
+                for y in range(y2, s.surf[x]):
                     self.draw_pixel(x,y,s.ct)
-                    y+=1
-            y=y1
-            while y<y2:
+
+            for y in range(y1, y2):
                 if y1 < 1: y1 = 1
                 if y2 < 1: y2 = 1
                 if y1 > HEIGHT-1: y1 = HEIGHT-1
@@ -164,12 +159,12 @@ class App:
                     wx[3] = wx[3]*200/wy[3]+W2
                     wy[3] = wz[3]*200/wy[3]+H2
 
-                    # self.draw_pixel(wx[0], wy[0], w.c)
-                    # self.draw_pixel(wx[1], wy[1], w.c)
-                    # self.draw_pixel(wx[2], wy[2], w.c)
-                    # self.draw_pixel(wx[3], wy[3], w.c)
-
                     self.draw_wall(wx[0], wx[1], wy[0], wy[1], wy[2], wy[3], w.c, s)
+                    
+                    self.draw_pixel(wx[0], wy[0], 0)
+                    self.draw_pixel(wx[1], wy[1], 0)
+                    self.draw_pixel(wx[2], wy[2], 0)
+                    self.draw_pixel(wx[3], wy[3], 0)
                 s.d /= (s.we-s.ws)
                 s.surface *= -1
 
