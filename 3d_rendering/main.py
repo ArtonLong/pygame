@@ -13,6 +13,7 @@ class App:
 
         self._running = True
         self.DISPLAY_SURF = pygame.display.set_mode(SIZE)
+        self.is_edit = False
 
         self.player = Player(70, -110, 20, 0, 0)
 
@@ -24,7 +25,6 @@ class App:
 
         self.cos = [0]*360
         self.sin = [0]*360
-
         for i in range(360):
             self.cos[i] = math.cos(i/180*math.pi)
             self.sin[i] = math.sin(i/180*math.pi)
@@ -42,7 +42,7 @@ class App:
         z1 = z1 + s * (z2 - z1)
         return x1, y1, z1
 
-    def draw_wall(self, x1, x2, b1, b2, t1, t2, c, s: Sector):
+    def draw_wall(self, x1, x2, b1, b2, t1, t2, s: Sector, w: Wall, front_back):
         dyb = b2 - b1
         dyt = t2 - t1
         dx = x2 - x1
@@ -50,10 +50,10 @@ class App:
             dx = 1
         xs = x1
 
-        if x1 < 1: x1 = 1
-        if x2 < 1: x2 = 1
-        if x1 > WIDTH-1: x1 = WIDTH-1
-        if x2 > WIDTH-1: x2 = WIDTH-1
+        if x1 < 0: x1 = 0
+        if x2 < 0: x2 = 0
+        if x1 > WIDTH: x1 = WIDTH
+        if x2 > WIDTH: x2 = WIDTH
 
         x1 = math.floor(x1)
         x2 = math.floor(x2)
@@ -62,34 +62,28 @@ class App:
             y1 = math.floor(dyb*(x-xs+0.5)/dx+b1)
             y2 = math.floor(dyt*(x-xs+0.5)/dx+t1)
             
-            if s.surface == 1: 
-                s.surf[x] = y1
-                continue
-            if s.surface == 2: 
-                s.surf[x] = y2
-                continue
-            if s.surface == -1:
-                for y in range(s.surf[x], y1):
-                    self.draw_pixel(x,y,s.cb)
-            if s.surface == -2:
-                for y in range(y2, s.surf[x]):
-                    self.draw_pixel(x,y,s.ct)
+            if y1 < 0: y1 = 0
+            if y2 < 0: y2 = 0
+            if y1 > HEIGHT: y1 = HEIGHT
+            if y2 > HEIGHT: y2 = HEIGHT
 
-            for y in range(y1, y2):
-                if y1 < 1: y1 = 1
-                if y2 < 1: y2 = 1
-                if y1 > HEIGHT-1: y1 = HEIGHT-1
-                if y2 > HEIGHT-1: y2 = HEIGHT-1
-
-                self.draw_pixel(x,y,c)
-                y+=1
+            if front_back == 0:
+                if s.surface == 1: s.surf[x] = y1
+                if s.surface == 2: s.surf[x] = y2
+                for y in range(y1, y2):
+                    self.draw_pixel(x,y,1)
+            if front_back == 1:
+                if s.surface == 1: y2 = s.surf[x]
+                if s.surface == 2: y1 = s.surf[x]
+                for y in range(y1, y2):
+                    self.draw_pixel(x,y,2)
 
     def draw_3d(self):
         wx = [0,0,0,0]
         wy = [0,0,0,0]
         wz = [0,0,0,0]
         cos, sin = self.cos[self.player.a], self.sin[self.player.a]
-
+        #bubble sort sectors in order of draw distance
         for s in range(len(self.sectors)-1):
             for w in range(len(self.sectors)-s-1):
                 if self.sectors[w].d < self.sectors[w+1].d:
@@ -97,16 +91,23 @@ class App:
                     self.sectors[w] = self.sectors[w+1]
                     self.sectors[w+1] = st
 
-        #offsetting the position of the wall point 1 at 40, 10. by the player
         for s in self.sectors:
             s.d = 0
-
-            if self.player.z < s.z1: s.surface = 1
-            elif self.player.z > s.z2: s.surface = 2
-            else: s.surface = 0
-
-            for loop in range(2):
-
+            if self.player.z < s.z1: 
+                s.surface = 1
+                cycles = 2
+                for x in range(WIDTH):
+                    s.surf[x] = HEIGHT
+            elif self.player.z > s.z2: 
+                s.surface = 2
+                cycles = 2
+                for x in range(WIDTH):
+                    s.surf[x] = 0
+            else: 
+                s.surface = 0
+                cycles = 1
+            #draw both sides of the wall so the top and bottom of the sector can be drawn
+            for front_back in range(cycles):
                 for i in range(s.ws, s.we):
                     w = self.walls[i]
                 
@@ -115,7 +116,7 @@ class App:
                     x2 = w.x2 - self.player.x
                     y2 = w.y2 - self.player.y
 
-                    if loop == 0:
+                    if front_back == 1:
                         swp = x1
                         x1 = x2
                         x2 = swp
@@ -137,8 +138,8 @@ class App:
 
                     wz[0] = s.z1-self.player.z + ((self.player.l*wy[0])/32)
                     wz[1] = s.z1-self.player.z + ((self.player.l*wy[1])/32)
-                    wz[2] = wz[0] + s.z2
-                    wz[3] = wz[1] + s.z2
+                    wz[2] = s.z2-self.player.z + ((self.player.l*wy[0])/32)
+                    wz[3] = s.z2-self.player.z + ((self.player.l*wy[1])/32)
                     if wy[0] < 1 and wy[1] < 1: continue
 
                     if wy[0] < 1:
@@ -159,14 +160,13 @@ class App:
                     wx[3] = wx[3]*200/wy[3]+W2
                     wy[3] = wz[3]*200/wy[3]+H2
 
-                    self.draw_wall(wx[0], wx[1], wy[0], wy[1], wy[2], wy[3], w.c, s)
+                    self.draw_wall(wx[0], wx[1], wy[0], wy[1], wy[2], wy[3], s, w, front_back)
                     
-                    self.draw_pixel(wx[0], wy[0], 0)
-                    self.draw_pixel(wx[1], wy[1], 0)
-                    self.draw_pixel(wx[2], wy[2], 0)
-                    self.draw_pixel(wx[3], wy[3], 0)
+                    # self.draw_pixel(wx[0], wy[0], 0)
+                    # self.draw_pixel(wx[1], wy[1], 0)
+                    # self.draw_pixel(wx[2], wy[2], 0)
+                    # self.draw_pixel(wx[3], wy[3], 0)
                 s.d /= (s.we-s.ws)
-                s.surface *= -1
 
     def draw_pixel(self, x, y, c):
         if c == 0: color = (255,255,255)
@@ -190,7 +190,20 @@ class App:
         fps = str(int(clock.get_fps()))
         fps_t = self.font(fps)
         self.DISPLAY_SURF.blit(fps_t,(0,0))
- 
+
+    def game_scene(self):
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_i]:
+            self.is_edit = True   
+        self.player.move_player(self.cos, self.sin)
+        self.draw_3d()
+        #self.draw_pixel(W2, H2, 1)
+
+    def edit_scene(self):
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_i]:
+            self.is_edit = False 
+
     def on_execute(self):
         clock = pygame.time.Clock()
 
@@ -199,10 +212,11 @@ class App:
                 if event.type == QUIT:
                     self.on_quit()
             self.DISPLAY_SURF.fill((0,0,0))
-
-            self.player.move_player(self.cos, self.sin)
-            self.draw_3d()
-            #self.draw_pixel(W2, H2, 1)
+                
+            if self.is_edit:
+               self.edit_scene()
+            else:
+                self.game_scene() 
 
             self.fps_counter(clock)
             pygame.display.update()
