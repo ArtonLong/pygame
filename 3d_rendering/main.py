@@ -6,6 +6,7 @@ import math
 from settings import *
 from player import Player
 from sector import Sector, Wall
+from editor import Editor
 
 class App:
     def __init__(self):
@@ -15,13 +16,17 @@ class App:
         self.DISPLAY_SURF = pygame.display.set_mode(SIZE)
         self.is_edit = False
 
-        self.player = Player(70, -110, 20, 0, 0)
+        self.player = Player(0, 0, 20, 0, 0)
+        self.editor = Editor(self.DISPLAY_SURF, self.player)
 
-        self.sectors = [Sector(0, 4, 0, 40, 3, 4), Sector(4, 8, 0, 40, 1, 2)]
-        self.walls = [
-            Wall(0,0,32,0,1), Wall(32,0,32,32,2), Wall(32,32,0,32,1), Wall(0,32,0,0,2),
-            Wall(64,96,0,0,3), Wall(96,96,0,32,4), Wall(96,64,32,32,3), Wall(64,64,32,0,4)
-            ]
+        self.sectors = []
+        self.walls = []
+
+        # self.sectors = [Sector(0, 4, 0, 40, 3, 4), Sector(4, 8, 0, 40, 1, 2)]
+        # self.walls = [
+        #     Wall(0,0,32,0,1), Wall(32,0,32,32,2), Wall(32,32,0,32,1), Wall(0,32,0,0,2),
+        #     Wall(64,96,0,0,3), Wall(96,96,0,32,4), Wall(96,64,32,32,3), Wall(64,64,32,0,4)
+        #     ]
 
         self.cos = [0]*360
         self.sin = [0]*360
@@ -31,6 +36,14 @@ class App:
 
     def dist(self, x1, x2, y1, y2):
         return math.sqrt((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1))
+    
+    def game_scene(self):
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_i]:
+            self.is_edit = True   
+        self.player.move_player(self.cos, self.sin)
+        self.draw_3d()
+        #self.draw_pixel(W2, H2, 1)
 
     def clip_behind_player(self, x1, y1, z1, x2, y2, z2):
         d = y1 - y2
@@ -178,6 +191,13 @@ class App:
 
         pygame.draw.rect(self.DISPLAY_SURF, color, ((x*PIXEL_SCALE, HEIGHT*PIXEL_SCALE - y*PIXEL_SCALE), (PIXEL_SCALE, PIXEL_SCALE)))
 
+    def edit_scene(self):
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_i]:
+            self.is_edit = False 
+        self.editor.place_player()
+        self.editor.draw()
+
     def on_quit(self):
         pygame.quit()
         sys.exit()
@@ -191,19 +211,6 @@ class App:
         fps_t = self.font(fps)
         self.DISPLAY_SURF.blit(fps_t,(0,0))
 
-    def game_scene(self):
-        keys = pygame.key.get_pressed()
-        if keys[pygame.K_i]:
-            self.is_edit = True   
-        self.player.move_player(self.cos, self.sin)
-        self.draw_3d()
-        #self.draw_pixel(W2, H2, 1)
-
-    def edit_scene(self):
-        keys = pygame.key.get_pressed()
-        if keys[pygame.K_i]:
-            self.is_edit = False 
-
     def on_execute(self):
         clock = pygame.time.Clock()
 
@@ -211,11 +218,15 @@ class App:
             for event in pygame.event.get():
                 if event.type == QUIT:
                     self.on_quit()
-            self.DISPLAY_SURF.fill((0,0,0))
+
+            self.sectors = self.editor.sectors
+            self.walls = self.editor.walls
                 
             if self.is_edit:
+               self.DISPLAY_SURF.fill((0,50,0))
                self.edit_scene()
             else:
+                self.DISPLAY_SURF.fill((0,0,0))
                 self.game_scene() 
 
             self.fps_counter(clock)
