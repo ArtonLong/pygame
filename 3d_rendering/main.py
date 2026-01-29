@@ -2,6 +2,7 @@ import pygame
 from pygame.locals import *
 import sys
 import math
+import time
 
 from settings import *
 from player import Player
@@ -15,18 +16,12 @@ class App:
         self._running = True
         self.DISPLAY_SURF = pygame.display.set_mode(SIZE)
         self.is_edit = False
+        self.tslp = 0
 
-        self.player = Player(0, 0, 20, 0, 0)
+        self.player = Player(W2*PIXEL_SCALE, H2*PIXEL_SCALE, 20, 0, 0)
         self.editor = Editor(self.DISPLAY_SURF, self.player)
 
         self.sectors = []
-        self.walls = []
-
-        # self.sectors = [Sector(0, 4, 0, 40, 3, 4), Sector(4, 8, 0, 40, 1, 2)]
-        # self.walls = [
-        #     Wall(0,0,32,0,1), Wall(32,0,32,32,2), Wall(32,32,0,32,1), Wall(0,32,0,0,2),
-        #     Wall(64,96,0,0,3), Wall(96,96,0,32,4), Wall(96,64,32,32,3), Wall(64,64,32,0,4)
-        #     ]
 
         self.cos = [0]*360
         self.sin = [0]*360
@@ -39,7 +34,7 @@ class App:
     
     def game_scene(self):
         keys = pygame.key.get_pressed()
-        if keys[pygame.K_i]:
+        if keys[pygame.K_i] and self.menu_press_interval():
             self.is_edit = True   
         self.player.move_player(self.cos, self.sin)
         self.draw_3d()
@@ -84,7 +79,7 @@ class App:
                 if s.surface == 1: s.surf[x] = y1
                 if s.surface == 2: s.surf[x] = y2
                 for y in range(y1, y2):
-                    self.draw_pixel(x,y,1)
+                    self.draw_pixel(x,y,w.c)
             if front_back == 1:
                 if s.surface == 1: y2 = s.surf[x]
                 if s.surface == 2: y1 = s.surf[x]
@@ -97,12 +92,16 @@ class App:
         wz = [0,0,0,0]
         cos, sin = self.cos[self.player.a], self.sin[self.player.a]
         #bubble sort sectors in order of draw distance
-        for s in range(len(self.sectors)-1):
-            for w in range(len(self.sectors)-s-1):
-                if self.sectors[w].d < self.sectors[w+1].d:
-                    st = self.sectors[w]
-                    self.sectors[w] = self.sectors[w+1]
-                    self.sectors[w+1] = st
+        n = len(self.sectors)
+        for i in range(n):
+            swapped = False
+            for j in range(0, n-i-1):
+                if self.sectors[j].d < self.sectors[j+1].d:
+                    self.sectors[j], self.sectors[j+1] = self.sectors[j+1], self.sectors[j]
+                    swapped = True
+            if not swapped:
+                break
+
 
         for s in self.sectors:
             s.d = 0
@@ -121,8 +120,7 @@ class App:
                 cycles = 1
             #draw both sides of the wall so the top and bottom of the sector can be drawn
             for front_back in range(cycles):
-                for i in range(s.ws, s.we):
-                    w = self.walls[i]
+                for w in s.walls:
                 
                     x1 = w.x1 - self.player.x
                     y1 = w.y1 - self.player.y
@@ -179,7 +177,6 @@ class App:
                     # self.draw_pixel(wx[1], wy[1], 0)
                     # self.draw_pixel(wx[2], wy[2], 0)
                     # self.draw_pixel(wx[3], wy[3], 0)
-                s.d /= (s.we-s.ws)
 
     def draw_pixel(self, x, y, c):
         if c == 0: color = (255,255,255)
@@ -193,10 +190,20 @@ class App:
 
     def edit_scene(self):
         keys = pygame.key.get_pressed()
-        if keys[pygame.K_i]:
+        if keys[pygame.K_i] and self.menu_press_interval():
             self.is_edit = False 
-        self.editor.place_player()
+        self.editor.button_handler()
         self.editor.draw()
+        if self.editor.is_placing_sector:
+            self.editor.placing_walls()
+        self.editor.place_player()
+    
+    def menu_press_interval(self):
+        current_time = time.time()
+        if current_time - self.tslp > 0.5: 
+            self.tslp = current_time
+            return True
+        return False
 
     def on_quit(self):
         pygame.quit()
@@ -220,7 +227,6 @@ class App:
                     self.on_quit()
 
             self.sectors = self.editor.sectors
-            self.walls = self.editor.walls
                 
             if self.is_edit:
                self.DISPLAY_SURF.fill((0,50,0))

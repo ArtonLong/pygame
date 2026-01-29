@@ -1,6 +1,7 @@
 import pygame
 from pygame.locals import *
 import math
+import time
 
 from settings import *
 from sector import Sector, Wall
@@ -9,21 +10,27 @@ class Editor:
     def __init__(self, surface, player):
         self.DISPLAY_SURF = surface
         self.player = player
-        #self.mouse_pos = 0
-        self.sectors = []
-        self.walls = []
+        self.tslc = 0
+        self.sectors:list[Sector] = [Sector(0, 40, 3, 4, [Wall(0,0,32,0,1), Wall(32,0,32,32,2), Wall(32,32,0,32,1), Wall(0,32,0,0,2)]), Sector(0, 40, 1, 2, [Wall(64,96,0,0,3), Wall(96,96,0,32,4), Wall(96,64,32,32,3), Wall(64,64,32,0,4)])]
         self.menu_width = 64
         self.grid_scale = 32
 
         self.start_sector_point = None
-        self.start_wall_point = [0,0]
-        self.end_wall_point = [0,0]
+        self.start_wall_point = None
         self.is_placing_sector = False
 
         self.new_sector_btn = Button(self.menu_width, 25, SIZE[0]-self.menu_width, 0, "new sector")
 
+    def handle_click(self):
+        current_time = time.time()
+        
+        if pygame.mouse.get_pressed()[0] and current_time - self.tslc > 0.5:
+            self.tslc = current_time
+            return True
+        return False
+
     def place_player(self):
-        pygame.draw.circle(self.DISPLAY_SURF, (255, 0, 0), (self.player.x+PIXEL_SCALE*W2, self.player.y+PIXEL_SCALE*H2), PIXEL_SCALE*3)
+        pygame.draw.circle(self.DISPLAY_SURF, (255, 0, 0), (self.player.x, self.player.y), PIXEL_SCALE*3)
 
     def draw(self):
         color = (0,0,0)
@@ -39,19 +46,49 @@ class Editor:
         pygame.draw.rect(self.DISPLAY_SURF, (100, 100, 100), ((SIZE[0]-self.menu_width, 0),(self.menu_width, SIZE[1])))
 
         self.new_sector_btn.draw(self.DISPLAY_SURF)
+
+        for s in self.sectors:
+            for w in s.walls:
+                self.draw_line(w.x1, w.y1, w.x2, w.y2, 0,0,0)
+
+    def button_handler(self):
         if self.new_sector_btn.button_click() and not self.is_placing_sector:
+            self.tslc = time.time() + 0.5
             self.place_sector()
             self.is_placing_sector = True
 
-        if self.is_placing_sector:
-            self.placing_walls()
-
     def place_sector(self):
-        new_sector = Sector(0,0,0,0,1,2)
+        new_sector = Sector(0,40,1,2, [])
+        self.sectors.append(new_sector)
     
     def placing_walls(self):
         mouse_pos = pygame.mouse.get_pos()
-        self.draw_pixel(mouse_pos[0], mouse_pos[1], 0)
+        mouse_x = round(mouse_pos[0]/self.grid_scale)*self.grid_scale
+        mouse_y = round(mouse_pos[1]/self.grid_scale)*self.grid_scale
+
+        self.draw_pixel(mouse_x, mouse_y, 0)
+        if self.start_wall_point != None:
+            self.draw_line(self.start_wall_point[0], self.start_wall_point[1], mouse_x, mouse_y, 0,0,0)
+
+        if self.handle_click():
+            if self.start_sector_point == None:
+                self.start_wall_point = (mouse_x, mouse_y)
+                self.start_sector_point = (mouse_x, mouse_y)
+                return
+            
+            new_wall = Wall(self.start_wall_point[0], mouse_x, self.start_wall_point[1], mouse_y, 1)
+
+            if self.start_sector_point == (mouse_x, mouse_y) and len(self.sectors[-1].walls) >= 2:
+                self.start_sector_point = None
+                self.start_wall_point = None
+                self.is_placing_sector = False
+            elif self.start_sector_point == (mouse_x, mouse_y):
+                return
+            else:
+                self.start_wall_point = (mouse_x, mouse_y)
+
+            self.sectors[-1].walls.append(new_wall)
+
 
     def draw_pixel(self, x, y, c):
         if c == 0: color = (255,255,255)
@@ -61,17 +98,18 @@ class Editor:
         elif c == 4: color = (100,0,155)
         else: color = (50,50,50)
 
-        pygame.draw.rect(self.DISPLAY_SURF, color, ((x*PIXEL_SCALE, y*PIXEL_SCALE), (PIXEL_SCALE, PIXEL_SCALE)))
+        pygame.draw.rect(self.DISPLAY_SURF, color, ((x, y), (PIXEL_SCALE, PIXEL_SCALE)))
 
-    def drawLine(self, x1,y1,x2,y2, r,g,b):
+    def draw_line(self, x1,y1,x2,y2, r,g,b):
         x = x2-x1
         y = y2-y1
         max = math.fabs(x)
         if math.fabs(y)>max: max=math.fabs(y)
+        if x == 0 and y == 0: return
         x /= max
         y /= max
-        for i in range(max):
-            self.draw_pixel(x1,y1,r,g,b)
+        for i in range(int(max)):
+            self.draw_pixel(x1,y1,0)
             x1+=x
             y1+=y
 
@@ -81,11 +119,19 @@ class Button:
         self.x, self.y = x, y
         self.text = self.font(text)
 
+        self.tslc = 0
         self.rect = pygame.Rect(x, y, width, height)
 
+    def handle_click(self):
+        current_time = time.time()
+        
+        if pygame.mouse.get_pressed()[0] and current_time - self.tslc > 1:
+            self.tslc = current_time
+            return True
+        return False
+
     def button_click(self):
-        pressed = pygame.mouse.get_pressed()
-        if pressed[0]:
+        if self.handle_click():
             if self.rect.collidepoint(pygame.mouse.get_pos()):
                 return True
         return False
