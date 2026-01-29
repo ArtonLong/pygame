@@ -23,11 +23,11 @@ class App:
 
         self.sectors = []
 
-        self.cos = [0]*360
-        self.sin = [0]*360
+        self.cos = []
+        self.sin = []
         for i in range(360):
-            self.cos[i] = math.cos(i/180*math.pi)
-            self.sin[i] = math.sin(i/180*math.pi)
+            self.cos.append(math.cos(i/180*math.pi))
+            self.sin.append(math.sin(i/180*math.pi))
 
     def dist(self, x1, x2, y1, y2):
         return math.sqrt((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1))
@@ -144,7 +144,7 @@ class App:
                     wy[2] = wy[0]
                     wy[3] = wy[1]
 
-                    s.d += self.dist(0, 0, (x1+x2)/2, (y1+y2)/2)
+                    s.d += self.dist(0, 0, (wx[0]+wx[1])/2, (wy[0]+wy[1])/2)
 
                     wz[0] = s.z1-self.player.z + ((self.player.l*wy[0])/32)
                     wz[1] = s.z1-self.player.z + ((self.player.l*wy[1])/32)
@@ -176,6 +176,7 @@ class App:
                     self.draw_pixel(wx[1], wy[1], 0)
                     self.draw_pixel(wx[2], wy[2], 0)
                     self.draw_pixel(wx[3], wy[3], 0)
+            #print(self.player.a, self.cos[self.player.a], self.sin[self.player.a])
 
     def draw_pixel(self, x, y, c):
         if c == 0: color = (255,255,255)
