@@ -12,6 +12,7 @@ class Editor:
         self.player = player
         self.tslc = 0
         self.sectors:list[Sector] = [Sector(0, 40, 3, 4, [Wall(0,0,32,0,1), Wall(32,0,32,32,2), Wall(32,32,0,32,1), Wall(0,32,0,0,2)]), Sector(0, 40, 1, 2, [Wall(64,96,0,0,3), Wall(96,96,0,32,4), Wall(96,64,32,32,3), Wall(64,64,32,0,4)])]
+        #self.sectors:list[Sector] = []
         self.menu_width = 64
         self.grid_scale = 32
 
@@ -58,7 +59,7 @@ class Editor:
             self.is_placing_sector = True
 
     def place_sector(self):
-        new_sector = Sector(0,40,1,2, [])
+        new_sector = Sector(0,200,1,2, [])
         self.sectors.append(new_sector)
     
     def placing_walls(self):

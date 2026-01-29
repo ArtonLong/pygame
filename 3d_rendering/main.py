@@ -38,7 +38,6 @@ class App:
             self.is_edit = True   
         self.player.move_player(self.cos, self.sin)
         self.draw_3d()
-        #self.draw_pixel(W2, H2, 1)
 
     def clip_behind_player(self, x1, y1, z1, x2, y2, z2):
         d = y1 - y2
@@ -103,7 +102,6 @@ class App:
             if not swapped:
                 break
 
-
         for s in self.sectors:
             s.d = 0
             if self.player.z < s.z1: 
@@ -146,7 +144,7 @@ class App:
                     wy[2] = wy[0]
                     wy[3] = wy[1]
 
-                    s.d += self.dist(0, 0, (wx[0]+wx[1])/2, (wy[0]+wy[1])/2)
+                    s.d += self.dist(0, 0, (x1+x2)/2, (y1+y2)/2)
 
                     wz[0] = s.z1-self.player.z + ((self.player.l*wy[0])/32)
                     wz[1] = s.z1-self.player.z + ((self.player.l*wy[1])/32)
