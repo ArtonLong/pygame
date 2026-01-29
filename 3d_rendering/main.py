@@ -45,8 +45,9 @@ class App:
         if d == 0: d = 1
         s = y1 / d
         x1 = x1 + s * (x2 - x1)
-        y1 = y1 + s * (y2 - y1)
-        if y1 == 0: y1 = 1
+        #y1 = y1 + s * (y2 - y1)
+        #if y1 == 0: y1 = 1
+        y1 = 1
         z1 = z1 + s * (z2 - z1)
         return x1, y1, z1
 
@@ -173,10 +174,10 @@ class App:
 
                     self.draw_wall(wx[0], wx[1], wy[0], wy[1], wy[2], wy[3], s, w, front_back)
                     
-                    # self.draw_pixel(wx[0], wy[0], 0)
-                    # self.draw_pixel(wx[1], wy[1], 0)
-                    # self.draw_pixel(wx[2], wy[2], 0)
-                    # self.draw_pixel(wx[3], wy[3], 0)
+                    self.draw_pixel(wx[0], wy[0], 0)
+                    self.draw_pixel(wx[1], wy[1], 0)
+                    self.draw_pixel(wx[2], wy[2], 0)
+                    self.draw_pixel(wx[3], wy[3], 0)
 
     def draw_pixel(self, x, y, c):
         if c == 0: color = (255,255,255)
