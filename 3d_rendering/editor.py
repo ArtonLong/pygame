@@ -2,6 +2,7 @@ import pygame
 from pygame.locals import *
 import math
 import time
+import json
 
 from settings import *
 from sector import Sector, Wall
@@ -11,9 +12,12 @@ class Editor:
         self.DISPLAY_SURF = surface
         self.player = player
         self.tslc = 0
-        self.sectors:list[Sector] = [Sector(0, 40, 3, 4, [Wall(0,0,32,0,1), Wall(32,0,32,32,2), Wall(32,32,0,32,1), Wall(0,32,0,0,2)]), Sector(0, 40, 1, 2, [Wall(64,96,0,0,3), Wall(96,96,0,32,4), Wall(96,64,32,32,3), Wall(64,64,32,0,4)])]
-        #self.sectors:list[Sector] = []
+
+        self.sectors:list[Sector] = []  
+
         self.menu_width = 64
+        self.selected_sector = 0
+        self.selected_wall = 0
         self.grid_scale = 32
 
         self.start_sector_point = None
@@ -21,6 +25,8 @@ class Editor:
         self.is_placing_sector = False
 
         self.new_sector_btn = Button(self.menu_width, 25, SIZE[0]-self.menu_width, 0, "new sector")
+        self.load_btn = Button(self.menu_width, 25, SIZE[0]-self.menu_width, SIZE[1]-50, "Load")
+        self.save_btn = Button(self.menu_width, 25, SIZE[0]-self.menu_width, SIZE[1]-25, "Save")
 
     def handle_click(self):
         current_time = time.time()
@@ -35,7 +41,6 @@ class Editor:
 
     def draw(self):
         color = (0,0,0)
-        #self.mouse_pos = pygame.mouse.get_pos()
 
         vert_lines = int(SIZE[0]//4)
         for v in range(vert_lines):
@@ -47,6 +52,7 @@ class Editor:
         pygame.draw.rect(self.DISPLAY_SURF, (100, 100, 100), ((SIZE[0]-self.menu_width, 0),(self.menu_width, SIZE[1])))
 
         self.new_sector_btn.draw(self.DISPLAY_SURF)
+        self.save_btn.draw(self.DISPLAY_SURF)
 
         for s in self.sectors:
             for w in s.walls:
@@ -58,8 +64,34 @@ class Editor:
             self.place_sector()
             self.is_placing_sector = True
 
+        if self.save_btn.button_click():
+            temp = []
+            for s in self.sectors:
+                temp.append(self.sector_to_dict(s))
+            data = {"sectors": temp}
+            with open(MAP_LOAD, "w") as json_file:
+                json.dump(data, json_file, indent=4)
+
+        if self.load_btn.button_click():
+            with open(MAP_LOAD, "r") as json_file:
+                data = json.load(json_file)
+            for s in data["sectors"]:
+                self.sectors.append(self.dict_to_sectors(s))
+
+    def dict_to_sectors(self, d:dict):
+        s = Sector(**d)
+        for i, w in enumerate(s.walls):
+            s.walls[i] = Wall(**w)
+        return s
+            
+    def sector_to_dict(self, s:Sector):
+        s_dict = s.__dict__
+        for i, w in enumerate(s_dict["walls"]):
+            s_dict["walls"][i] = w.__dict__
+        return s_dict
+
     def place_sector(self):
-        new_sector = Sector(0,200,1,2, [])
+        new_sector = Sector(0,40,1,2, [])
         self.sectors.append(new_sector)
     
     def placing_walls(self):
