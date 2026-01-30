@@ -29,7 +29,7 @@ class App:
             self.cos.append(math.cos(i/180*math.pi))
             self.sin.append(math.sin(i/180*math.pi))
 
-    def dist(self, x1, x2, y1, y2):
+    def dist(self, x1, y1, x2, y2):
         return math.sqrt((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1))
     
     def game_scene(self):
@@ -145,6 +145,7 @@ class App:
                     wy[3] = wy[1]
 
                     s.d += self.dist(0, 0, (wx[0]+wx[1])/2, (wy[0]+wy[1])/2)
+                    #s.d += self.dist(self.player.x, self.player.y, (w.x1+w.x2)/2, (w.y1+w.y2)/2)
 
                     wz[0] = s.z1-self.player.z + ((self.player.l*wy[0])/32)
                     wz[1] = s.z1-self.player.z + ((self.player.l*wy[1])/32)
@@ -176,7 +177,7 @@ class App:
                     # self.draw_pixel(wx[1], wy[1], (255,255,255))
                     # self.draw_pixel(wx[2], wy[2], (255,255,255))
                     # self.draw_pixel(wx[3], wy[3], (255,255,255))
-            #print(self.player.a, self.cos[self.player.a], self.sin[self.player.a])
+                s.d /= len(s.walls)
 
     def draw_pixel(self, x, y, color:tuple):
         pygame.draw.rect(self.DISPLAY_SURF, color, ((x*PIXEL_SCALE, HEIGHT*PIXEL_SCALE - y*PIXEL_SCALE), (PIXEL_SCALE, PIXEL_SCALE)))
