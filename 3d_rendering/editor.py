@@ -18,6 +18,8 @@ class Editor:
         self.menu_width = 64
         self.selected_sector = 0
         self.selected_wall = 0
+        self.selected_color = 0
+        self.color = (255,0,0)
         self.grid_scale = 32
 
         self.start_sector_point = None
@@ -25,19 +27,23 @@ class Editor:
         self.is_placing_sector = False
 
         self.new_sector_btn = Button(self.menu_width, 25, SIZE[0]-self.menu_width, 0, "new sector")
+        self.delete_btn = Button(self.menu_width, 25, SIZE[0]-self.menu_width, 25, "Delete")
         self.load_btn = Button(self.menu_width, 25, SIZE[0]-self.menu_width, SIZE[1]-50, "Load")
         self.save_btn = Button(self.menu_width, 25, SIZE[0]-self.menu_width, SIZE[1]-25, "Save")
+        self.sector_btn = Button(self.menu_width, 25, SIZE[0]-self.menu_width, 50, "sector:")
+        self.wall_btn = Button(self.menu_width, 25, SIZE[0]-self.menu_width, 75, "wall: 0")
+        self.color_btn = Button(self.menu_width, 25, SIZE[0]-self.menu_width, 100, "color")
 
     def handle_click(self):
         current_time = time.time()
         
-        if pygame.mouse.get_pressed()[0] and current_time - self.tslc > 0.5:
+        if pygame.mouse.get_pressed()[0] and current_time - self.tslc > 0.25:
             self.tslc = current_time
             return True
         return False
 
     def place_player(self):
-        pygame.draw.circle(self.DISPLAY_SURF, (255, 0, 0), (self.player.x, self.player.y), PIXEL_SCALE*3)
+        pygame.draw.circle(self.DISPLAY_SURF, (255, 0, 0), (self.player.x, self.player.y), PIXEL_SCALE*2)
 
     def draw(self):
         color = (0,0,0)
@@ -52,17 +58,35 @@ class Editor:
         pygame.draw.rect(self.DISPLAY_SURF, (100, 100, 100), ((SIZE[0]-self.menu_width, 0),(self.menu_width, SIZE[1])))
 
         self.new_sector_btn.draw(self.DISPLAY_SURF)
+        self.delete_btn.draw(self.DISPLAY_SURF)
+        self.load_btn.draw(self.DISPLAY_SURF)
         self.save_btn.draw(self.DISPLAY_SURF)
+        self.sector_btn.draw(self.DISPLAY_SURF)
+        self.wall_btn.draw(self.DISPLAY_SURF)
+        self.color_btn.draw(self.DISPLAY_SURF)
 
-        for s in self.sectors:
-            for w in s.walls:
-                self.draw_line(w.x1, w.y1, w.x2, w.y2, 0,0,0)
+        self.sector_btn.text = f"sector: {self.selected_sector}"
+        self.wall_btn.text = f"wall: {self.selected_wall}"
+        pygame.draw.rect(self.DISPLAY_SURF, self.color, ((self.color_btn.x+(self.color_btn.width-25), self.color_btn.y),(25,25)))
+
+        for i, s in enumerate(self.sectors):
+            for j, w in enumerate(s.walls):
+                if i == self.selected_sector:
+                    if j == self.selected_wall:
+                        pygame.draw.circle(self.DISPLAY_SURF, (255,255,255), (w.x1, w.y1), PIXEL_SCALE)
+                        pygame.draw.circle(self.DISPLAY_SURF, (255,255,255), (w.x2, w.y2), PIXEL_SCALE)
+
+                self.draw_line(w.x1, w.y1, w.x2, w.y2, w.c)
 
     def button_handler(self):
         if self.new_sector_btn.button_click() and not self.is_placing_sector:
             self.tslc = time.time() + 0.5
             self.place_sector()
             self.is_placing_sector = True
+
+        if self.delete_btn.button_click() and not self.is_placing_sector:
+            self.sectors.pop(self.selected_sector)
+            self.selected_sector = 0
 
         if self.save_btn.button_click():
             temp = []
@@ -77,6 +101,33 @@ class Editor:
                 data = json.load(json_file)
             for s in data["sectors"]:
                 self.sectors.append(self.dict_to_sectors(s))
+        
+        if self.sector_btn.button_click() and not self.is_placing_sector:
+            self.selected_sector += 1
+            if self.selected_sector > len(self.sectors)-1:
+                self.selected_sector = 0
+
+        if self.wall_btn.button_click() and not self.is_placing_sector:
+            self.selected_wall += 1
+            if self.selected_wall > len(self.sectors[self.selected_sector].walls)-1:
+                self.selected_wall = 0
+
+        if self.color_btn.button_click() and not self.is_placing_sector:
+            self.selected_color += 1
+            if self.selected_color > 3:
+                self.selected_color = 0
+    
+            if self.selected_color == 0:
+                self.color = (255,0,0)
+            if self.selected_color == 1:
+                self.color = (0,255,0)
+            if self.selected_color == 2:
+                self.color = (0,0,255)
+            if self.selected_color == 3:
+                self.color = (155,0,100)
+
+            self.sectors[self.selected_sector].walls[self.selected_wall].c = self.color
+
 
     def dict_to_sectors(self, d:dict):
         s = Sector(**d)
@@ -93,15 +144,18 @@ class Editor:
     def place_sector(self):
         new_sector = Sector(0,40,1,2, [])
         self.sectors.append(new_sector)
+        index = len(self.sectors) - 1
+        self.selected_sector = index
+        self.sector_btn.text = f"sector: {index}"
     
     def placing_walls(self):
         mouse_pos = pygame.mouse.get_pos()
         mouse_x = round(mouse_pos[0]/self.grid_scale)*self.grid_scale
         mouse_y = round(mouse_pos[1]/self.grid_scale)*self.grid_scale
 
-        self.draw_pixel(mouse_x, mouse_y, 0)
+        self.draw_pixel(mouse_x, mouse_y, (255,255,255))
         if self.start_wall_point != None:
-            self.draw_line(self.start_wall_point[0], self.start_wall_point[1], mouse_x, mouse_y, 0,0,0)
+            self.draw_line(self.start_wall_point[0], self.start_wall_point[1], mouse_x, mouse_y, (255,255,255))
 
         if self.handle_click():
             if self.start_sector_point == None:
@@ -109,7 +163,7 @@ class Editor:
                 self.start_sector_point = (mouse_x, mouse_y)
                 return
             
-            new_wall = Wall(self.start_wall_point[0], mouse_x, self.start_wall_point[1], mouse_y, 1)
+            new_wall = Wall(self.start_wall_point[0], mouse_x, self.start_wall_point[1], mouse_y, self.color)
 
             if self.start_sector_point == (mouse_x, mouse_y) and len(self.sectors[-1].walls) >= 2:
                 self.start_sector_point = None
@@ -123,17 +177,11 @@ class Editor:
             self.sectors[-1].walls.append(new_wall)
 
 
-    def draw_pixel(self, x, y, c):
-        if c == 0: color = (255,255,255)
-        elif c == 1: color = (255,0,0)
-        elif c == 2: color = (0,255,0)
-        elif c == 3: color = (0,0,255)
-        elif c == 4: color = (100,0,155)
-        else: color = (50,50,50)
+    def draw_pixel(self, x, y, color:tuple):
 
         pygame.draw.rect(self.DISPLAY_SURF, color, ((x, y), (PIXEL_SCALE, PIXEL_SCALE)))
 
-    def draw_line(self, x1,y1,x2,y2, r,g,b):
+    def draw_line(self, x1,y1,x2,y2, color:tuple):
         x = x2-x1
         y = y2-y1
         max = math.fabs(x)
@@ -142,7 +190,7 @@ class Editor:
         x /= max
         y /= max
         for i in range(int(max)):
-            self.draw_pixel(x1,y1,0)
+            self.draw_pixel(x1,y1,color)
             x1+=x
             y1+=y
 
@@ -150,7 +198,7 @@ class Button:
     def __init__(self, width, height, x, y, text):
         self.width, self.height = width, height
         self.x, self.y = x, y
-        self.text = self.font(text)
+        self.text = text
 
         self.tslc = 0
         self.rect = pygame.Rect(x, y, width, height)
@@ -174,5 +222,6 @@ class Button:
         return font.render(text , 1, (0,0,0))
 
     def draw(self, surface):
+        f_text = self.font(self.text)
         pygame.draw.rect(surface, (200,200,200), self.rect)
-        surface.blit(self.text, (self.x, self.y))
+        surface.blit(f_text, (self.x, self.y))

@@ -84,7 +84,7 @@ class App:
                 if s.surface == 1: y2 = s.surf[x]
                 if s.surface == 2: y1 = s.surf[x]
                 for y in range(y1, y2):
-                    self.draw_pixel(x,y,2)
+                    self.draw_pixel(x,y,(0,255,0))
 
     def draw_3d(self):
         wx = [0,0,0,0]
@@ -172,20 +172,13 @@ class App:
 
                     self.draw_wall(wx[0], wx[1], wy[0], wy[1], wy[2], wy[3], s, w, front_back)
                     
-                    self.draw_pixel(wx[0], wy[0], 0)
-                    self.draw_pixel(wx[1], wy[1], 0)
-                    self.draw_pixel(wx[2], wy[2], 0)
-                    self.draw_pixel(wx[3], wy[3], 0)
+                    # self.draw_pixel(wx[0], wy[0], (255,255,255))
+                    # self.draw_pixel(wx[1], wy[1], (255,255,255))
+                    # self.draw_pixel(wx[2], wy[2], (255,255,255))
+                    # self.draw_pixel(wx[3], wy[3], (255,255,255))
             #print(self.player.a, self.cos[self.player.a], self.sin[self.player.a])
 
-    def draw_pixel(self, x, y, c):
-        if c == 0: color = (255,255,255)
-        elif c == 1: color = (255,0,0)
-        elif c == 2: color = (0,255,0)
-        elif c == 3: color = (0,0,255)
-        elif c == 4: color = (100,0,155)
-        else: color = (50,50,50)
-
+    def draw_pixel(self, x, y, color:tuple):
         pygame.draw.rect(self.DISPLAY_SURF, color, ((x*PIXEL_SCALE, HEIGHT*PIXEL_SCALE - y*PIXEL_SCALE), (PIXEL_SCALE, PIXEL_SCALE)))
 
     def edit_scene(self):
