@@ -145,7 +145,6 @@ class App:
                     wy[3] = wy[1]
 
                     s.d += self.dist(0, 0, (wx[0]+wx[1])/2, (wy[0]+wy[1])/2)
-                    #s.d += self.dist(self.player.x, self.player.y, (w.x1+w.x2)/2, (w.y1+w.y2)/2)
 
                     wz[0] = s.z1-self.player.z + ((self.player.l*wy[0])/32)
                     wz[1] = s.z1-self.player.z + ((self.player.l*wy[1])/32)

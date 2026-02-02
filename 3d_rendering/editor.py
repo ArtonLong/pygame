@@ -19,6 +19,8 @@ class Editor:
         self.selected_sector = 0
         self.selected_wall = 0
         self.selected_color = 0
+        self.sector_height = "0"
+        self.sector_z = "0"
         self.color = (255,0,0)
         self.grid_scale = 32
 
@@ -33,6 +35,8 @@ class Editor:
         self.sector_btn = Button(self.menu_width, 25, SIZE[0]-self.menu_width, 50, "sector:")
         self.wall_btn = Button(self.menu_width, 25, SIZE[0]-self.menu_width, 75, "wall: 0")
         self.color_btn = Button(self.menu_width, 25, SIZE[0]-self.menu_width, 100, "color")
+        self.height_btn = Button(self.menu_width, 25, SIZE[0]-self.menu_width, 150, "height: ")
+        self.z_location_btn = Button(self.menu_width, 25, SIZE[0]-self.menu_width, 175, "z: ")
 
     def handle_click(self):
         current_time = time.time()
@@ -64,6 +68,8 @@ class Editor:
         self.sector_btn.draw(self.DISPLAY_SURF)
         self.wall_btn.draw(self.DISPLAY_SURF)
         self.color_btn.draw(self.DISPLAY_SURF)
+        self.height_btn.draw(self.DISPLAY_SURF)
+        self.z_location_btn.draw(self.DISPLAY_SURF)
 
         self.sector_btn.text = f"sector: {self.selected_sector}"
         self.wall_btn.text = f"wall: {self.selected_wall}"
@@ -75,7 +81,6 @@ class Editor:
                     if j == self.selected_wall:
                         pygame.draw.circle(self.DISPLAY_SURF, (255,255,255), (w.x1, w.y1), PIXEL_SCALE)
                         pygame.draw.circle(self.DISPLAY_SURF, (255,255,255), (w.x2, w.y2), PIXEL_SCALE)
-
                 self.draw_line(w.x1, w.y1, w.x2, w.y2, w.c)
 
     def button_handler(self):
@@ -127,7 +132,10 @@ class Editor:
                 self.color = (155,0,100)
 
             self.sectors[self.selected_sector].walls[self.selected_wall].c = self.color
-
+        
+        if self.height_btn.button_click() and not self.is_placing_sector:
+            pass
+        
 
     def dict_to_sectors(self, d:dict):
         s = Sector(**d)
@@ -136,9 +144,13 @@ class Editor:
         return s
             
     def sector_to_dict(self, s:Sector):
-        s_dict = s.__dict__
-        for i, w in enumerate(s_dict["walls"]):
-            s_dict["walls"][i] = w.__dict__
+        s_dict = {}
+        temp = []
+        for key, value in s.__dict__.items():
+            s_dict[key] = value
+        for w in s_dict["walls"]:
+            temp.append(w.__dict__)
+        s_dict["walls"] = temp
         return s_dict
 
     def place_sector(self):
@@ -178,7 +190,6 @@ class Editor:
 
 
     def draw_pixel(self, x, y, color:tuple):
-
         pygame.draw.rect(self.DISPLAY_SURF, color, ((x, y), (PIXEL_SCALE, PIXEL_SCALE)))
 
     def draw_line(self, x1,y1,x2,y2, color:tuple):
