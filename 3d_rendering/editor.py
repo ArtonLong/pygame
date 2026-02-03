@@ -38,10 +38,23 @@ class Editor:
         self.height_btn = Button(self.menu_width, 25, SIZE[0]-self.menu_width, 150, "height: ")
         self.z_location_btn = Button(self.menu_width, 25, SIZE[0]-self.menu_width, 175, "z: ")
 
+        self.is_setting_height = False
+        self.height = ""
+        self.is_setting_z = False
+        self.z = ""
+
     def handle_click(self):
         current_time = time.time()
         
         if pygame.mouse.get_pressed()[0] and current_time - self.tslc > 0.25:
+            self.tslc = current_time
+            return True
+        return False
+    
+    def press_delay(self):
+        current_time = time.time()
+        
+        if current_time - self.tslc > 0.15:
             self.tslc = current_time
             return True
         return False
@@ -73,6 +86,8 @@ class Editor:
 
         self.sector_btn.text = f"sector: {self.selected_sector}"
         self.wall_btn.text = f"wall: {self.selected_wall}"
+        self.height_btn.text = f"height: {self.height}"
+        self.z_location_btn.text = f"z: {self.z}"
         pygame.draw.rect(self.DISPLAY_SURF, self.color, ((self.color_btn.x+(self.color_btn.width-25), self.color_btn.y),(25,25)))
 
         for i, s in enumerate(self.sectors):
@@ -111,6 +126,8 @@ class Editor:
             self.selected_sector += 1
             if self.selected_sector > len(self.sectors)-1:
                 self.selected_sector = 0
+            self.height = str(self.sectors[self.selected_sector].z2)
+            self.z = str(self.sectors[self.selected_sector].z1)
 
         if self.wall_btn.button_click() and not self.is_placing_sector:
             self.selected_wall += 1
@@ -134,9 +151,24 @@ class Editor:
             self.sectors[self.selected_sector].walls[self.selected_wall].c = self.color
         
         if self.height_btn.button_click() and not self.is_placing_sector:
-            pass
-        
+            self.is_setting_height = True
 
+        if self.z_location_btn.button_click() and not self.is_placing_sector:
+            self.is_setting_z = True
+    
+    def numpad(self):
+        keys = pygame.key.get_pressed()
+
+        for i, k in enumerate(keys):
+            if k:
+                if i == 42:
+                    return "b"
+                elif i == 40:
+                    return "e"
+                num = (i + 1) % 10
+                return num
+        return None
+        
     def dict_to_sectors(self, d:dict):
         s = Sector(**d)
         for i, w in enumerate(s.walls):

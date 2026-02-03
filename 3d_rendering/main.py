@@ -190,6 +190,26 @@ class App:
         if self.editor.is_placing_sector:
             self.editor.placing_walls()
         self.editor.place_player()
+
+        if self.editor.is_setting_height and self.editor.press_delay():
+            num = self.editor.numpad()
+            if type(num) == int:
+                self.editor.height += str(num)
+            elif num == "b":
+                self.editor.height = self.editor.height[:-1]
+            elif num == "e":
+                self.editor.sectors[self.editor.selected_sector].z2 = int(self.editor.height)
+                self.editor.is_setting_height = False
+
+        if self.editor.is_setting_z and self.editor.press_delay():
+            num = self.editor.numpad()
+            if type(num) == int:
+                self.editor.z += str(num)
+            elif num == "b":
+                self.editor.z = self.editor.z[:-1]
+            elif num == "e":
+                self.editor.sectors[self.editor.selected_sector].z1 = int(self.editor.z)
+                self.editor.is_setting_z = False
     
     def menu_press_interval(self):
         current_time = time.time()
