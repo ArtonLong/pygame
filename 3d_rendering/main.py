@@ -8,6 +8,7 @@ from settings import *
 from player import Player
 from sector import Sector, Wall
 from editor import Editor
+from textures import *
 
 class App:
     def __init__(self):
@@ -37,6 +38,7 @@ class App:
         if keys[pygame.K_i] and self.menu_press_interval():
             self.is_edit = True   
         self.player.move_player(self.cos, self.sin)
+        #self.test_texture(M_STONE)
         self.draw_3d()
 
     def clip_behind_player(self, x1, y1, z1, x2, y2, z2):
@@ -51,6 +53,7 @@ class App:
         return x1, y1, z1
 
     def draw_wall(self, x1, x2, b1, b2, t1, t2, s: Sector, w: Wall, front_back):
+
         dyb = b2 - b1
         dyt = t2 - t1
         dx = x2 - x1
@@ -58,32 +61,43 @@ class App:
             dx = 1
         xs = x1
 
+        wt = TEXTURES[w.wt_index]
+        ht = 0
+        ht_step = wt.width/dx
+
         if x1 < 0: x1 = 0
         if x2 < 0: x2 = 0
         if x1 > WIDTH: x1 = WIDTH
         if x2 > WIDTH: x2 = WIDTH
 
-        x1 = math.floor(x1)
-        x2 = math.floor(x2)
+        for x in range(math.floor(x1), math.floor(x2)):
+            y1 = dyb*(x-xs+0.5)/dx+b1
+            y2 = dyt*(x-xs+0.5)/dx+t1
 
-        for x in range(x1, x2):
-            y1 = math.floor(dyb*(x-xs+0.5)/dx+b1)
-            y2 = math.floor(dyt*(x-xs+0.5)/dx+t1)
+            vt = 0
+            vt_step = wt.height/(y2-y1)
             
             if y1 < 0: y1 = 0
             if y2 < 0: y2 = 0
             if y1 > HEIGHT: y1 = HEIGHT
-            if y2 > HEIGHT: y2 = HEIGHT
+            if y2 > HEIGHT: y2 = HEIGHT    
 
             if front_back == 0:
                 if s.surface == 1: s.surf[x] = y1
                 if s.surface == 2: s.surf[x] = y2
-                for y in range(y1, y2):
-                    self.draw_pixel(x,y,w.c)
+                for y in range(math.floor(y1), math.floor(y2)):
+                    pixel = math.floor((wt.height-vt-1)*wt.width + ht*3)
+                    r = wt.texture[pixel]
+                    g = wt.texture[pixel+1]
+                    b = wt.texture[pixel+2]
+                    self.draw_pixel(x,y,(r,g,b))
+                    vt += vt_step
+                ht += ht_step
+
             if front_back == 1:
                 if s.surface == 1: y2 = s.surf[x]
                 if s.surface == 2: y1 = s.surf[x]
-                for y in range(y1, y2):
+                for y in range(math.floor(y1), math.floor(y2)):
                     self.draw_pixel(x,y,(0,255,0))
 
     def draw_3d(self):
@@ -180,6 +194,15 @@ class App:
 
     def draw_pixel(self, x, y, color:tuple):
         pygame.draw.rect(self.DISPLAY_SURF, color, ((x*PIXEL_SCALE, HEIGHT*PIXEL_SCALE - y*PIXEL_SCALE), (PIXEL_SCALE, PIXEL_SCALE)))
+
+    def test_texture(self, texture: Texture):
+        for y in range(texture.height):
+            for x in range(texture.width):
+                pixel = (texture.height-y-1)*3*texture.width + x*3
+                r = texture.texture[pixel]
+                g = texture.texture[pixel+1]
+                b = texture.texture[pixel+2]
+                self.draw_pixel(x,y,(r,g,b))
 
     def edit_scene(self):
         keys = pygame.key.get_pressed()

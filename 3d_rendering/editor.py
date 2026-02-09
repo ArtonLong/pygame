@@ -207,7 +207,7 @@ class Editor:
                 self.start_sector_point = (mouse_x, mouse_y)
                 return
             
-            new_wall = Wall(self.start_wall_point[0], mouse_x, self.start_wall_point[1], mouse_y, self.color)
+            new_wall = Wall(self.start_wall_point[0], mouse_x, self.start_wall_point[1], mouse_y, self.color, 1)
 
             if self.start_sector_point == (mouse_x, mouse_y) and len(self.sectors[-1].walls) >= 2:
                 self.start_sector_point = None

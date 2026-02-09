@@ -2,9 +2,10 @@
 from settings import *
 
 class Wall:
-    def __init__(self, x1, x2, y1, y2, c):
+    def __init__(self, x1, x2, y1, y2, c, wt_index):
         self.x1, self.x2 = x1, x2
         self.y1, self.y2= y1, y2
+        self.wt_index = wt_index
         self.c = c
 
 class Sector:
