@@ -6,6 +6,7 @@ import json
 
 from settings import *
 from sector import Sector, Wall
+from textures import *
 
 class Editor:
     def __init__(self, surface, player):
@@ -186,7 +187,7 @@ class Editor:
         return s_dict
 
     def place_sector(self):
-        new_sector = Sector(0,40,1,2, [])
+        new_sector = Sector(0,32,1,2,4,1,[])
         self.sectors.append(new_sector)
         index = len(self.sectors) - 1
         self.selected_sector = index
@@ -207,7 +208,14 @@ class Editor:
                 self.start_sector_point = (mouse_x, mouse_y)
                 return
             
-            new_wall = Wall(self.start_wall_point[0], mouse_x, self.start_wall_point[1], mouse_y, self.color, 1)
+            dx = abs(mouse_x - self.start_wall_point[0])
+            dy = abs(mouse_y - self.start_wall_point[1])
+
+            if dx > 0: u = dx//32
+            else: u = dy//32
+            v = 1
+            
+            new_wall = Wall(self.start_wall_point[0], mouse_x, self.start_wall_point[1], mouse_y, self.color, 1, u, v)
 
             if self.start_sector_point == (mouse_x, mouse_y) and len(self.sectors[-1].walls) >= 2:
                 self.start_sector_point = None
@@ -219,7 +227,6 @@ class Editor:
                 self.start_wall_point = (mouse_x, mouse_y)
 
             self.sectors[-1].walls.append(new_wall)
-
 
     def draw_pixel(self, x, y, color:tuple):
         pygame.draw.rect(self.DISPLAY_SURF, color, ((x, y), (PIXEL_SCALE, PIXEL_SCALE)))

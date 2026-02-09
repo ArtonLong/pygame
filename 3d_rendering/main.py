@@ -38,7 +38,8 @@ class App:
         if keys[pygame.K_i] and self.menu_press_interval():
             self.is_edit = True   
         self.player.move_player(self.cos, self.sin)
-        #self.test_texture(M_STONE)
+        #self.floors()
+        #self.test_texture(M_GRASS)
         self.draw_3d()
 
     def clip_behind_player(self, x1, y1, z1, x2, y2, z2):
@@ -63,9 +64,11 @@ class App:
 
         wt = TEXTURES[w.wt_index]
         ht = 0
-        ht_step = wt.width/dx
+        ht_step = wt.width*w.u/dx
 
-        if x1 < 0: x1 = 0
+        if x1 < 0:
+            ht -= ht_step*x1 
+            x1 = 0
         if x2 < 0: x2 = 0
         if x1 > WIDTH: x1 = WIDTH
         if x2 > WIDTH: x2 = WIDTH
@@ -75,9 +78,11 @@ class App:
             y2 = dyt*(x-xs+0.5)/dx+t1
 
             vt = 0
-            vt_step = wt.height/(y2-y1)
+            vt_step = wt.height*w.v/(y2-y1)
             
-            if y1 < 0: y1 = 0
+            if y1 < 0: 
+                vt -= vt_step*y1
+                y1 = 0
             if y2 < 0: y2 = 0
             if y1 > HEIGHT: y1 = HEIGHT
             if y2 > HEIGHT: y2 = HEIGHT    
@@ -86,7 +91,9 @@ class App:
                 if s.surface == 1: s.surf[x] = y1
                 if s.surface == 2: s.surf[x] = y2
                 for y in range(math.floor(y1), math.floor(y2)):
-                    pixel = math.floor((wt.height-vt-1)*wt.width + ht*3)
+                    pixel = abs(round(wt.height-(vt%wt.height)-1)*3*wt.width + round(ht%wt.width)*3)
+                    if pixel > len(wt.texture)-3:
+                        pixel = len(wt.texture)-3
                     r = wt.texture[pixel]
                     g = wt.texture[pixel+1]
                     b = wt.texture[pixel+2]
@@ -95,10 +102,46 @@ class App:
                 ht += ht_step
 
             if front_back == 1:
-                if s.surface == 1: y2 = s.surf[x]
-                if s.surface == 2: y1 = s.surf[x]
-                for y in range(math.floor(y1), math.floor(y2)):
-                    self.draw_pixel(x,y,(0,255,0))
+                #for y in range(math.floor(y1), math.floor(y2)):
+                wo = 0
+                x2 = x-W2
+                tile = s.ss*7
+
+                if s.surface == 1: 
+                    y2 = s.surf[x]
+                    wo = s.z1
+                if s.surface == 2: 
+                    y1 = s.surf[x]
+                    wo = s.z2
+
+                look_up_down = -self.player.l*6.1
+                if look_up_down>HEIGHT: look_up_down=HEIGHT
+                move_up_down = (self.player.z-wo)/H2
+                if move_up_down == 0: move_up_down = 0.001
+                
+                ys = y1-H2
+                ye = y2-H2
+
+                for y in range(math.floor(ys), math.floor(ye)):
+                    z = y+look_up_down
+                    if z == 0: z = 0.0001
+                    fx = x2/z*move_up_down*tile
+                    fy = FOV/z*move_up_down*tile
+                    rx = fx*self.sin[self.player.a]-fy*self.cos[self.player.a]+(self.player.y/60*tile)
+                    ry = fx*self.cos[self.player.a]+fy*self.sin[self.player.a]-(self.player.x/60*tile)
+
+                    if rx < 0: rx = -rx+1
+                    if ry < 0: ry = -ry+1
+                    
+                    st:Texture = SURFACE_TEXTURES[s.st]
+
+                    pixel = abs(round(st.height-(ry%st.height)-1)*3*st.width + round(rx%st.width)*3)
+                    if pixel > len(st.texture)-3:
+                        pixel = len(st.texture)-3
+                    r = st.texture[pixel]
+                    g = st.texture[pixel+1]
+                    b = st.texture[pixel+2]
+                    self.draw_pixel(x2+W2,y+H2,(r,g,b))
 
     def draw_3d(self):
         wx = [0,0,0,0]
@@ -175,14 +218,14 @@ class App:
                         wx[3], wy[3], wz[3] = self.clip_behind_player(wx[3], wy[3], wz[3], wx[2], wy[2], wz[2],)
 
                     #screen pos
-                    wx[0] = wx[0]*200/wy[0]+W2
-                    wy[0] = wz[0]*200/wy[0]+H2
-                    wx[1] = wx[1]*200/wy[1]+W2
-                    wy[1] = wz[1]*200/wy[1]+H2
-                    wx[2] = wx[2]*200/wy[2]+W2
-                    wy[2] = wz[2]*200/wy[2]+H2
-                    wx[3] = wx[3]*200/wy[3]+W2
-                    wy[3] = wz[3]*200/wy[3]+H2
+                    wx[0] = wx[0]*FOV/wy[0]+W2
+                    wy[0] = wz[0]*FOV/wy[0]+H2
+                    wx[1] = wx[1]*FOV/wy[1]+W2
+                    wy[1] = wz[1]*FOV/wy[1]+H2
+                    wx[2] = wx[2]*FOV/wy[2]+W2
+                    wy[2] = wz[2]*FOV/wy[2]+H2
+                    wx[3] = wx[3]*FOV/wy[3]+W2
+                    wy[3] = wz[3]*FOV/wy[3]+H2
 
                     self.draw_wall(wx[0], wx[1], wy[0], wy[1], wy[2], wy[3], s, w, front_back)
                     
@@ -191,6 +234,35 @@ class App:
                     # self.draw_pixel(wx[2], wy[2], (255,255,255))
                     # self.draw_pixel(wx[3], wy[3], (255,255,255))
                 s.d /= len(s.walls)
+
+    def floors(self):
+
+        look_up_down = -self.player.l*4
+        if look_up_down>HEIGHT: look_up_down=HEIGHT
+        move_up_down = self.player.z/16
+        if move_up_down == 0: move_up_down = 0.001
+
+        ys = -H2
+        ye = -look_up_down
+
+        if move_up_down < 0: 
+            ys = -look_up_down
+            ye = H2+look_up_down
+
+        for y in range(ys, ye):
+            for x in range(-W2, W2):
+                z = y+look_up_down
+                if z == 0: z = 0.0001
+                fx = x/z*move_up_down
+                fy = FOV/z*move_up_down
+                rx = fx*self.sin[self.player.a]-fy*self.cos[self.player.a]+(self.player.y/30)
+                ry = fx*self.cos[self.player.a]+fy*self.sin[self.player.a]-(self.player.x/30)
+
+                if rx < 0: rx = -rx+1
+                if ry < 0: ry = -ry+1
+                if rx<=0 or ry<=0 or rx >= 5 or ry >= 5: continue
+                if int(rx%2) == int(ry%2): self.draw_pixel(x+W2, y+H2, (255,0,0))
+                else: self.draw_pixel(x+W2, y+H2, (0,255,0))
 
     def draw_pixel(self, x, y, color:tuple):
         pygame.draw.rect(self.DISPLAY_SURF, color, ((x*PIXEL_SCALE, HEIGHT*PIXEL_SCALE - y*PIXEL_SCALE), (PIXEL_SCALE, PIXEL_SCALE)))
