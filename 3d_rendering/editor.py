@@ -20,7 +20,7 @@ class Editor:
         self.selected_sector = 0
         self.selected_wall = 0
         self.selected_color = 0
-        self.sector_height = "0"
+        self.sector_height = "32"
         self.sector_z = "0"
         self.color = (255,0,0)
         self.grid_scale = 32
@@ -35,14 +35,12 @@ class Editor:
         self.save_btn = Button(self.menu_width, 25, SIZE[0]-self.menu_width, SIZE[1]-25, "Save")
         self.sector_btn = Button(self.menu_width, 25, SIZE[0]-self.menu_width, 50, "sector:")
         self.wall_btn = Button(self.menu_width, 25, SIZE[0]-self.menu_width, 75, "wall: 0")
-        self.color_btn = Button(self.menu_width, 25, SIZE[0]-self.menu_width, 100, "color")
+        # self.color_btn = Button(self.menu_width, 25, SIZE[0]-self.menu_width, 100, "color")
         self.height_btn = Button(self.menu_width, 25, SIZE[0]-self.menu_width, 150, "height: ")
         self.z_location_btn = Button(self.menu_width, 25, SIZE[0]-self.menu_width, 175, "z: ")
 
         self.is_setting_height = False
-        self.height = ""
         self.is_setting_z = False
-        self.z = ""
 
     def handle_click(self):
         current_time = time.time()
@@ -81,15 +79,15 @@ class Editor:
         self.save_btn.draw(self.DISPLAY_SURF)
         self.sector_btn.draw(self.DISPLAY_SURF)
         self.wall_btn.draw(self.DISPLAY_SURF)
-        self.color_btn.draw(self.DISPLAY_SURF)
+        # self.color_btn.draw(self.DISPLAY_SURF)
         self.height_btn.draw(self.DISPLAY_SURF)
         self.z_location_btn.draw(self.DISPLAY_SURF)
 
         self.sector_btn.text = f"sector: {self.selected_sector}"
         self.wall_btn.text = f"wall: {self.selected_wall}"
-        self.height_btn.text = f"height: {self.height}"
-        self.z_location_btn.text = f"z: {self.z}"
-        pygame.draw.rect(self.DISPLAY_SURF, self.color, ((self.color_btn.x+(self.color_btn.width-25), self.color_btn.y),(25,25)))
+        self.height_btn.text = f"height: {self.sector_height}"
+        self.z_location_btn.text = f"z: {self.sector_z}"
+        # pygame.draw.rect(self.DISPLAY_SURF, self.color, ((self.color_btn.x+(self.color_btn.width-25), self.color_btn.y),(25,25)))
 
         for i, s in enumerate(self.sectors):
             for j, w in enumerate(s.walls):
@@ -108,6 +106,8 @@ class Editor:
         if self.delete_btn.button_click() and not self.is_placing_sector:
             self.sectors.pop(self.selected_sector)
             self.selected_sector = 0
+            self.sector_height = str(self.sectors[self.selected_sector].z2)
+            self.sector_z = str(self.sectors[self.selected_sector].z1)
 
         if self.save_btn.button_click():
             temp = []
@@ -124,34 +124,37 @@ class Editor:
             for s in data["sectors"]:
                 loaded_s.append(self.dict_to_sectors(s))
             self.sectors = loaded_s
+            self.selected_sector = 0
+            self.sector_height = str(self.sectors[self.selected_sector].z2)
+            self.sector_z = str(self.sectors[self.selected_sector].z1)
         
         if self.sector_btn.button_click() and not self.is_placing_sector:
             self.selected_sector += 1
             if self.selected_sector > len(self.sectors)-1:
                 self.selected_sector = 0
-            self.height = str(self.sectors[self.selected_sector].z2)
-            self.z = str(self.sectors[self.selected_sector].z1)
+            self.sector_height = str(self.sectors[self.selected_sector].z2)
+            self.sector_z = str(self.sectors[self.selected_sector].z1)
 
         if self.wall_btn.button_click() and not self.is_placing_sector:
             self.selected_wall += 1
             if self.selected_wall > len(self.sectors[self.selected_sector].walls)-1:
                 self.selected_wall = 0
 
-        if self.color_btn.button_click() and not self.is_placing_sector:
-            self.selected_color += 1
-            if self.selected_color > 3:
-                self.selected_color = 0
+        # if self.color_btn.button_click() and not self.is_placing_sector:
+        #     self.selected_color += 1
+        #     if self.selected_color > 3:
+        #         self.selected_color = 0
     
-            if self.selected_color == 0:
-                self.color = (255,0,0)
-            if self.selected_color == 1:
-                self.color = (0,255,0)
-            if self.selected_color == 2:
-                self.color = (0,0,255)
-            if self.selected_color == 3:
-                self.color = (155,0,100)
+        #     if self.selected_color == 0:
+        #         self.color = (255,0,0)
+        #     if self.selected_color == 1:
+        #         self.color = (0,255,0)
+        #     if self.selected_color == 2:
+        #         self.color = (0,0,255)
+        #     if self.selected_color == 3:
+        #         self.color = (155,0,100)
 
-            self.sectors[self.selected_sector].walls[self.selected_wall].c = self.color
+        #     self.sectors[self.selected_sector].walls[self.selected_wall].c = self.color
         
         if self.height_btn.button_click() and not self.is_placing_sector:
             self.is_setting_height = True
@@ -173,8 +176,7 @@ class Editor:
         return None
     
     def texture_v(self, s: Sector):
-        dz = abs(s.z2 - s.z1)
-        v = dz//32
+        v = s.z2//32
         for i in range(len(s.walls)):
             s.walls[i].v = v
 
@@ -195,7 +197,7 @@ class Editor:
         return s_dict
 
     def place_sector(self):
-        new_sector = Sector(0,32,1,2,4,1,[])
+        new_sector = Sector(int(self.sector_z), int(self.sector_height),4,1,[])
         self.sectors.append(new_sector)
         index = len(self.sectors) - 1
         self.selected_sector = index

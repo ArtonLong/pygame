@@ -204,8 +204,8 @@ class App:
 
                     wz[0] = s.z1-self.player.z + ((self.player.l*wy[0])/32)
                     wz[1] = s.z1-self.player.z + ((self.player.l*wy[1])/32)
-                    wz[2] = s.z2-self.player.z + ((self.player.l*wy[0])/32)
-                    wz[3] = s.z2-self.player.z + ((self.player.l*wy[1])/32)
+                    wz[2] = s.z1+s.z2-self.player.z + ((self.player.l*wy[0])/32)
+                    wz[3] = s.z1+s.z2-self.player.z + ((self.player.l*wy[1])/32)
                     if wy[0] < 1 and wy[1] < 1: continue
 
                     if wy[0] < 1:
@@ -235,7 +235,6 @@ class App:
                 s.d /= len(s.walls)
 
     def floors(self):
-
         look_up_down = -self.player.l*4
         if look_up_down>HEIGHT: look_up_down=HEIGHT
         move_up_down = self.player.z/16
@@ -288,25 +287,25 @@ class App:
         if self.editor.is_setting_height and self.editor.press_delay():
             num = self.editor.numpad()
             if type(num) == int:
-                self.editor.height += str(num)
+                self.editor.sector_height += str(num)
             elif num == "b":
-                self.editor.height = self.editor.height[:-1]
+                self.editor.sector_height = self.editor.sector_height[:-1]
             elif num == "e":
                 s = self.editor.sectors[self.editor.selected_sector]
                 self.editor.texture_v(s)
-                s.z2 = int(self.editor.height)
+                s.z2 = int(self.editor.sector_height)
                 self.editor.is_setting_height = False
 
         if self.editor.is_setting_z and self.editor.press_delay():
             num = self.editor.numpad()
             if type(num) == int:
-                self.editor.z += str(num)
+                self.editor.sector_z += str(num)
             elif num == "b":
-                self.editor.z = self.editor.z[:-1]
+                self.editor.sector_z = self.editor.sector_z[:-1]
             elif num == "e":
                 s = self.editor.sectors[self.editor.selected_sector]
                 self.editor.texture_v(s)
-                s.z1 = int(self.editor.z)
+                s.z1 = int(self.editor.sector_z)
                 self.editor.is_setting_z = False
     
     def menu_press_interval(self):
