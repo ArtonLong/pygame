@@ -120,8 +120,10 @@ class Editor:
         if self.load_btn.button_click():
             with open(MAP_LOAD, "r") as json_file:
                 data = json.load(json_file)
+            loaded_s = []
             for s in data["sectors"]:
-                self.sectors.append(self.dict_to_sectors(s))
+                loaded_s.append(self.dict_to_sectors(s))
+            self.sectors = loaded_s
         
         if self.sector_btn.button_click() and not self.is_placing_sector:
             self.selected_sector += 1
@@ -169,7 +171,13 @@ class Editor:
                 num = (i + 1) % 10
                 return num
         return None
-        
+    
+    def texture_v(self, s: Sector):
+        dz = abs(s.z2 - s.z1)
+        v = dz//32
+        for i in range(len(s.walls)):
+            s.walls[i].v = v
+
     def dict_to_sectors(self, d:dict):
         s = Sector(**d)
         for i, w in enumerate(s.walls):
@@ -213,9 +221,8 @@ class Editor:
 
             if dx > 0: u = dx//32
             else: u = dy//32
-            v = 1
             
-            new_wall = Wall(self.start_wall_point[0], mouse_x, self.start_wall_point[1], mouse_y, self.color, 1, u, v)
+            new_wall = Wall(self.start_wall_point[0], mouse_x, self.start_wall_point[1], mouse_y, self.color, 1, u, 1)
 
             if self.start_sector_point == (mouse_x, mouse_y) and len(self.sectors[-1].walls) >= 2:
                 self.start_sector_point = None
